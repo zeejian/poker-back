@@ -225,6 +225,10 @@ function dealCommunityCards(){
     }
 }
 
+function checkWinnter(){
+    
+}
+
 function sendToAllPlayers(cards){
     socketToPlayerMap.forEach((value, key, map) =>{
         if(cards.cardType == 'flop'){
