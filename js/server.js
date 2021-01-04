@@ -221,6 +221,7 @@ function dealCommunityCards(){
         //check result
         //set to preFlop, at starGame?
         checkWinner();
+        gameStage='preFlop';
     }
 }
 
