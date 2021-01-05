@@ -163,17 +163,11 @@ playerActionSlideButton.forEach(function (eachButton) {
     console.log('betting ammount is ' + eachButton.value);
     document.getElementById('raiseSlider' + eachButton.getAttribute('id').slice(-1)).style.display = 'none';
   });
+  eachButton.addEventListener('input', function (e) {
+    console.log('showing ammount ' + eachButton.value);
+    document.getElementById('amount' +eachButton.getAttribute('id').slice(-1)).innerHTML=eachButton.value;
+  });
 });
-
-// playerActionSubmitButton.addEventListener('mouseup', function(e){
-//   console.log('betting ammount is '+playerActionSubmitButton.value);
-//   document.getElementById('form1').style.display = 'none';
-// })
-// playerActionSubmitButton.forEach(function(eachButton){
-//   eachButton.addEventListener('submit', function(e){
-//     console.log('betting ammount is '+e);
-//   })
-// })
 
 function internal_GetCardImageUrl(card) {
   var suit = card.substring(0, 1);
