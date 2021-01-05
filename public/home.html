@@ -6,6 +6,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <title>Poker App</title>
+    <style>
+        .slidecontainer {
+          width: 100%;
+        }
+        
+        .slider {
+          -webkit-appearance: none;
+          width: 100%;
+          height: 15px;
+          border-radius: 5px;
+          background: #d3d3d3;
+          outline: none;
+          opacity: 0.7;
+          -webkit-transition: .2s;
+          transition: opacity .2s;
+        }
+        
+        .slider:hover {
+          opacity: 1;
+        }
+        
+        .slider::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 25px;
+          height: 25px;
+          border-radius: 50%;
+          background: #4CAF50;
+          cursor: pointer;
+        }
+        
+        .slider::-moz-range-thumb {
+          width: 25px;
+          height: 25px;
+          border-radius: 50%;
+          background: #4CAF50;
+          cursor: pointer;
+        }
+        </style>
 </head>
 
 <body>
@@ -46,11 +85,8 @@
         <button type="button" class="regular" name="raise" id="raise1" value="1" hidden="hidden">
             raise
         </button>
-        <div id="form1" style="display: none">
-            <form action="">
-                <input type="text" id="" name="" value=""><br><br>
-                <input type="submit" value="Confirm" />
-            </form>
+        <div class="slidecontainer" id="raiseSlider1" style="display: none">
+            <input type="range" min="1" max="100" value="50" class="slider" name="myRange" id="myRange1">
         </div>
         <button type="button" class="regular" name="call" id="call1" value="1" hidden="hidden">
             call
@@ -70,10 +106,8 @@
         <button type="button" class="regular" name="raise" id="raise2" value="2" hidden="hidden">
             raise
         </button>
-        <div id="form2" style="display: none">
-            <form action="">
-                <input type="submit" value="Confirm" />
-            </form>
+        <div class="slidecontainer" id="raiseSlider2" style="display: none">
+            <input type="range" min="1" max="100" value="50" class="slider" name="myRange" id="myRange2">
         </div>
         <button type="button" class="regular" name="call" id="call2" value="2" hidden="hidden">
             call
@@ -93,10 +127,8 @@
         <button type="button" class="regular" name="raise" id="raise3" value="3" hidden="hidden">
             raise
         </button>
-        <div id="form3" style="display: none">
-            <form action="">
-                <input type="submit" value="Confirm" />
-            </form>
+        <div class="slidecontainer" id="raiseSlider3" style="display: none">
+            <input type="range" min="1" max="100" value="50" class="slider" name="myRange" id="myRange3">
         </div>
         <button type="button" class="regular" name="call" id="call3" value="3" hidden="hidden">
             call

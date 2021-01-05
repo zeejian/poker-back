@@ -152,9 +152,28 @@ playerActionRaiseButton.forEach(function (eachButton) {
     document.getElementById('check' + eachButton.value).hidden = 'hidden';
     document.getElementById('raise' + eachButton.value).hidden = 'hidden';
     document.getElementById('call' + eachButton.value).hidden = 'hidden';
-    document.getElementById('form' + eachButton.value).style.display = '';
+    document.getElementById('raiseSlider' + eachButton.value).style.display =
+      '';
   });
 });
+
+const playerActionSlideButton = document.getElementsByName('myRange');
+playerActionSlideButton.forEach(function (eachButton) {
+  eachButton.addEventListener('mouseup', function (e) {
+    console.log('betting ammount is ' + eachButton.value);
+    document.getElementById('raiseSlider' + eachButton.getAttribute('id').slice(-1)).style.display = 'none';
+  });
+});
+
+// playerActionSubmitButton.addEventListener('mouseup', function(e){
+//   console.log('betting ammount is '+playerActionSubmitButton.value);
+//   document.getElementById('form1').style.display = 'none';
+// })
+// playerActionSubmitButton.forEach(function(eachButton){
+//   eachButton.addEventListener('submit', function(e){
+//     console.log('betting ammount is '+e);
+//   })
+// })
 
 function internal_GetCardImageUrl(card) {
   var suit = card.substring(0, 1);
