@@ -1,11 +1,11 @@
-const express = require("express");
-const { readFile } = require("fs");
-var bodyParser = require("body-parser");
+const express = require('express');
+const { readFile } = require('fs');
+var bodyParser = require('body-parser');
 const app = express();
-const server = require("http").Server(app);
-const io = require("socket.io")(server);
+const server = require('http').Server(app);
+const io = require('socket.io')(server);
 
-app.use(express.static("public"));
+app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 //globals
@@ -20,17 +20,17 @@ var pot = 0;
 var highestBet = 0;
 var gameStage; //enum: preFlop, flop, turn, river
 
-app.get("/", (request, response) => {
-  readFile("./public/home.html", "utf8", (err, html) => {
+app.get('/', (request, response) => {
+  readFile('./public/home.html', 'utf8', (err, html) => {
     if (err) {
-      response.status(500).send("sorry, out of order");
+      response.status(500).send('sorry, out of order');
     }
     response.send(html);
   });
 });
 
 server.listen(process.env.PORT || 3000, () =>
-  console.log("App available on http://localhost:3000")
+  console.log('App available on http://localhost:3000')
 );
 
 //////////////////////////////////////////////////////
@@ -55,18 +55,18 @@ server.listen(process.env.PORT || 3000, () =>
 //     }
 // });
 
-io.on("connection", function (socket) {
-  socket.on("joinGameEvent", function (data) {
-    console.log("A client sent us this dumb message:", data.player_id);
+io.on('connection', function (socket) {
+  socket.on('joinGameEvent', function (data) {
+    console.log('A client sent us this dumb message:', data.player_id);
 
     onePlayer = new Player(
       parseInt(data.player_id),
-      "",
-      "",
+      '',
+      '',
       100,
-      "",
-      "",
-      "inactive",
+      '',
+      '',
+      'inactive',
       0,
       0
     );
@@ -77,44 +77,44 @@ io.on("connection", function (socket) {
     if (!isGameOn) {
       startGame(socket, io);
     } else {
-      console.log("waiting for this round finish.");
+      console.log('waiting for this round finish.');
     }
   });
 
-  socket.on("playerActionFold", function (data) {
-    console.log("received the user action fold event.");
+  socket.on('playerActionFold', function (data) {
+    console.log('received the user action fold event.');
     // if playerList length is less 3, start over; otherwise deregister the player(reset status)
 
-    console.log("player with id: " + data.player_id + " folded.");
-    updatePlayerStatus(parseInt(data.player_id), "inactive");
+    console.log('player with id: ' + data.player_id + ' folded.');
+    updatePlayerStatus(parseInt(data.player_id), 'inactive');
     updatePlayerSubtotalBet(parseInt(data.player_id), 0);
-    nrOfactivePlayers = getStatusPlayers("active").length;
-    console.log("nubmer of active player is : " + nrOfactivePlayers);
+    nrOfactivePlayers = getStatusPlayers('active').length;
+    console.log('nubmer of active player is : ' + nrOfactivePlayers);
 
     //reset subtotal_bet, hasChecked!
 
-    socket.emit("foldMsg", data.player_id);
+    socket.emit('foldMsg', data.player_id);
     //fold the card as well?
 
     if (nrOfactivePlayers < 2) {
-      console.log("this round ended.");
+      console.log('this round ended.');
       isGameOn = false;
       if (!isGameOn) {
         startGame(socket, io);
       } else {
         //could it be 'fold' is hit but new game is started by new joined players
-        console.log("new players are in.");
+        console.log('new players are in.');
       }
     } else {
       // prompt next player
-      console.log("this round continues.");
+      console.log('this round continues.');
       next = getNextPlayer(getIdPlayer(parseInt(data.player_id)));
       sendToPlayer(socketToPlayerMap, next);
     }
   });
 
-  socket.on("playerActionCall", function (data) {
-    console.log("received the user action call event.");
+  socket.on('playerActionCall', function (data) {
+    console.log('received the user action call event.');
     //calculate delta to call
     player = getIdPlayer(parseInt(data.player_id));
 
@@ -125,34 +125,34 @@ io.on("connection", function (socket) {
       //we do not want to give the option 'call'?
       //if the next players bet is less than the highestBet, we dont give option 'check'?
       if (next.subtotal_bet == highestBet && next.player_id != big.player_id) {
-        console.log("this is where we start dealing the next card(s)");
+        console.log('this is where we start dealing the next card(s)');
         dealCommunityCards();
         //reset highestBet and subtotal_bet to 0?
         for (var i = 0; i < playerList.length; i++) {
-          if (playerList[i].status == "active") {
+          if (playerList[i].status == 'active') {
             playerList[i].subtotal_bet = 0;
           }
         }
         highestBet = 0;
 
         //send options to the next player of button
-        button = getRolePlayers("button")[0];
+        button = getRolePlayers('button')[0];
         sendToPlayer(socketToPlayerMap, getNextPlayer(button));
       } else {
         sendToPlayer(socketToPlayerMap, next);
       }
     } else {
-      socket.emit("callMsg", data.player_id);
+      socket.emit('callMsg', data.player_id);
       console.log(
-        "this shouldnt happen that users: " +
+        'this shouldnt happen that users: ' +
           player.player_id +
-          " bet is larger than highestBet."
+          ' bet is larger than highestBet.'
       );
     }
   });
 
-  socket.on("playerActionCheck", function (data) {
-    console.log("received the user action check event.");
+  socket.on('playerActionCheck', function (data) {
+    console.log('received the user action check event.');
 
     player = getIdPlayer(parseInt(data.player_id));
     if (highestBet == player.subtotal_bet) {
@@ -161,14 +161,14 @@ io.on("connection", function (socket) {
         dealCommunityCards();
         //reset highestBet and subtotal_bet to 0?
         for (var i = 0; i < playerList.length; i++) {
-          if (playerList[i].status == "active") {
+          if (playerList[i].status == 'active') {
             playerList[i].subtotal_bet = 0;
           }
         }
         highestBet = 0;
 
         //send options to the next player of button
-        button = getRolePlayers("button")[0];
+        button = getRolePlayers('button')[0];
         sendToPlayer(socketToPlayerMap, getNextPlayer(button));
       } else {
         //check done from small to button
@@ -178,11 +178,11 @@ io.on("connection", function (socket) {
           dealCommunityCards();
           //reset hasChecked flag
           for (var i = 0; i < playerList.length; i++) {
-            if (playerList[i].status == "active") {
+            if (playerList[i].status == 'active') {
               playerList[i].hasChecked = false;
             }
           }
-          button = getRolePlayers("button")[0];
+          button = getRolePlayers('button')[0];
           sendToPlayer(socketToPlayerMap, getNextPlayer(button));
         } else {
           next = getNextPlayer(player);
@@ -191,14 +191,14 @@ io.on("connection", function (socket) {
         }
       }
     } else {
-      socket.emit("checkMsg", data.player_id);
-      console.log("you can not use option check.");
+      socket.emit('checkMsg', data.player_id);
+      console.log('you can not use option check.');
     }
   });
   //incoming data should contain player_id, betting amount
-  socket.on("playerActionRaise", function (data) {
-    console.log("received the user action raise event.");
-    socket.emit("raiseMsg", data.player_id);
+  socket.on('playerActionRaise', function (data) {
+    console.log('received the user action raise event.');
+    socket.emit('raiseMsg', data.player_id);
 
     player = getIdPlayer(parseInt(data.player_id));
     player.subtotal_bet = data.bet;
@@ -206,7 +206,7 @@ io.on("connection", function (socket) {
     //or we calculate and send options with possible maximum one can bet
 
     if (highestBet > player.subtotal_bet) {
-      console.log("create side pot.");
+      console.log('create side pot.');
     } else {
       highestBet = player.subtotal_bet;
       next = getNextPlayer(getIdPlayer(player.player_id));
@@ -217,29 +217,29 @@ io.on("connection", function (socket) {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 function dealCommunityCards() {
-  if (gameStage == "preFlop") {
+  if (gameStage == 'preFlop') {
     //send to all players 3 cards
     //set to flop
     drawCards(1);
-    sendToAllPlayers({ cardType: "flop", card: drawCards(3) });
-    gameStage = "flop";
-  } else if (gameStage == "flop") {
+    sendToAllPlayers({ cardType: 'flop', card: drawCards(3) });
+    gameStage = 'flop';
+  } else if (gameStage == 'flop') {
     //send turn card
     //set to turn
     drawCards(1);
-    sendToAllPlayers({ cardType: "turn", card: drawCards(1)[0] });
-    gameStage = "turn";
-  } else if (gameStage == "turn") {
+    sendToAllPlayers({ cardType: 'turn', card: drawCards(1)[0] });
+    gameStage = 'turn';
+  } else if (gameStage == 'turn') {
     //send river card
     //set to river
     drawCards(1);
-    sendToAllPlayers({ cardType: "river", card: drawCards(1)[0] });
-    gameStage = "river";
-  } else if (gameStage == "river") {
+    sendToAllPlayers({ cardType: 'river', card: drawCards(1)[0] });
+    gameStage = 'river';
+  } else if (gameStage == 'river') {
     //check result
     //set to preFlop, at starGame?
     checkWinner();
-    gameStage = "preFlop";
+    gameStage = 'preFlop';
   }
 }
 
@@ -247,14 +247,14 @@ function checkWinnter() {}
 
 function sendToAllPlayers(cards) {
   socketToPlayerMap.forEach((value, key, map) => {
-    if (cards.cardType == "flop") {
-      io.to(key).emit("layFlopCards", cards.card);
-    } else if (cards.cardType == "turn") {
-      io.to(key).emit("layTurnCard", cards.card);
-    } else if (cards.cardType == "river") {
-      io.to(key).emit("layRiverCard", cards.card);
+    if (cards.cardType == 'flop') {
+      io.to(key).emit('layFlopCards', cards.card);
+    } else if (cards.cardType == 'turn') {
+      io.to(key).emit('layTurnCard', cards.card);
+    } else if (cards.cardType == 'river') {
+      io.to(key).emit('layRiverCard', cards.card);
     } else {
-      console.log("do not know what to send.");
+      console.log('do not know what to send.');
     }
   });
 }
@@ -262,8 +262,8 @@ function sendToAllPlayers(cards) {
 function sendToPlayer(socket_player, aPlayer) {
   socket_player.forEach((value, key, map) => {
     if (value.player_id == aPlayer.player_id) {
-      console.log("players info : " + JSON.stringify(aPlayer));
-      io.to(key).emit("options", aPlayer.player_id); //callback when the loop finishes
+      console.log('players info : ' + JSON.stringify(aPlayer));
+      io.to(key).emit('options', aPlayer.player_id); //callback when the loop finishes
     }
   });
 
@@ -317,12 +317,12 @@ function updatePlayerBet(id, jVal) {
 function updatePlayer(id, jTag, jVal) {
   for (var i = 0; i < playerList.length; i++) {
     console.log(
-      "can this property name be working??? " + JSON.stringify(playerList[i])
+      'can this property name be working??? ' + JSON.stringify(playerList[i])
     );
     if (playerList[i].player_id == id) {
       playerList[i].jTag = jVal;
       console.log(
-        "can this property name be working? " + JSON.stringify(playerList[i])
+        'can this property name be working? ' + JSON.stringify(playerList[i])
       );
       return;
     }
@@ -362,7 +362,7 @@ function getPlayers(jTag, jVal) {
   var findedPlayers = [];
   for (var i = 0; i < playerList.length; i++) {
     console.log(
-      "can this property name be working!! " + JSON.stringify(playerList[i])
+      'can this property name be working!! ' + JSON.stringify(playerList[i])
     );
     if (playerList[i].jTag == jVal) {
       findedPlayers.push(playerList[i]);
@@ -375,25 +375,25 @@ function startGame(socket, io) {
   if (playerList.length > 1) {
     //set player to active before settting isGameOn, because there might be waitting players in the list
     for (var i = 0; i < playerList.length; i++) {
-      playerList[i].status = "active";
+      playerList[i].status = 'active';
       playerList[i].subtotal_bet = 0;
     }
     isGameOn = true; //after this, the new joined players will be in inactive
-    gameStage = "preFlop";
+    gameStage = 'preFlop';
     button = getButtonPlayer(); // possible to change to async function
-    console.log("button player id is: " + button.player_id);
+    console.log('button player id is: ' + button.player_id);
     dealHoleCards();
     socketToPlayerMap.forEach((value, key, map) => {
-      console.log("send according to key: " + key);
-      io.to(key).emit("faceDownCards", value);
+      console.log('send according to key: ' + key);
+      io.to(key).emit('faceDownCards', value);
     });
     next = getNextPlayer(big);
-    console.log("sending to next player of big blind: " + JSON.stringify(next));
+    console.log('sending to next player of big blind: ' + JSON.stringify(next));
     //fold card round, from next player of big blind to big blind
     sendToPlayer(socketToPlayerMap, next);
   } else {
-    console.log("waiting for other players to start game.");
-    socket.emit("message2", "only one player now.");
+    console.log('waiting for other players to start game.');
+    socket.emit('message2', 'only one player now.');
   }
 }
 
@@ -401,28 +401,28 @@ function startGame(socket, io) {
 function dealHoleCards() {
   makeDeck();
   small = getNextPlayer(button);
-  updatePlayerRole(small.player_id, "small");
+  updatePlayerRole(small.player_id, 'small');
   updatePlayerBet(small.player_id, 10); //hardcoded small blind 10
   //updatePlayer(small.player_id, '', '');
   updatePlayerHoleCards(small);
-  console.log("cards deck length is " + cards.length);
-  console.log("small json: " + JSON.stringify(small));
+  console.log('cards deck length is ' + cards.length);
+  console.log('small json: ' + JSON.stringify(small));
 
   //get big blind but we do not assign the role
   big = getNextPlayer(small);
   //updatePlayer(next.player_id, '', '');
   updatePlayerBet(big.player_id, 20); //hardcoded big blind 20
   updatePlayerHoleCards(big);
-  console.log("cards deck length is " + cards.length);
-  console.log("big json: " + JSON.stringify(big));
+  console.log('cards deck length is ' + cards.length);
+  console.log('big json: ' + JSON.stringify(big));
   highestBet = 20;
   next = big;
   while (button.player_id != next.player_id) {
     next = getNextPlayer(next);
     //updatePlayer(next.player_id, '', '');
     updatePlayerHoleCards(next);
-    console.log("cards deck length is " + cards.length);
-    console.log("next json: " + JSON.stringify(next));
+    console.log('cards deck length is ' + cards.length);
+    console.log('next json: ' + JSON.stringify(next));
   }
 }
 
@@ -430,15 +430,15 @@ function getButtonPlayer() {
   playerList.sort((a, b) => {
     return a.player_id - b.player_id;
   });
-  buttonPlayer = getRolePlayers("button");
+  buttonPlayer = getRolePlayers('button');
   if (buttonPlayer.length == 0) {
     //new game, fresh player list no button assigned, or button just left the game?
-    updatePlayerRole(playerList[0].player_id, "button"); // assign the first available seat pos as button
-    return getRolePlayers("button")[0];
+    updatePlayerRole(playerList[0].player_id, 'button'); // assign the first available seat pos as button
+    return getRolePlayers('button')[0];
   } else {
-    updatePlayerRole(buttonPlayer[0].player_id, "");
+    updatePlayerRole(buttonPlayer[0].player_id, '');
     next = getNextPlayer(buttonPlayer[0]);
-    updatePlayerRole(next.player_id, "button");
+    updatePlayerRole(next.player_id, 'button');
     return next; // move the button to the next possible seat pos
   }
 }
@@ -446,13 +446,13 @@ function getButtonPlayer() {
 function getNextPlayer(player) {
   for (var i = player.player_id; i < playerList.length; i++) {
     //console.log('player id: '  +playerList[i].player_id);
-    if (playerList[i].status != "inactive") {
+    if (playerList[i].status != 'inactive') {
       return playerList[i];
     }
   }
   for (var i = 0; i < player.player_id - 1; i++) {
     //console.log('player id: '  +playerList[i].player_id);
-    if (playerList[i].status != "inactive") {
+    if (playerList[i].status != 'inactive') {
       return playerList[i];
     }
   }
@@ -514,10 +514,10 @@ function makeDeck() {
   var i;
   var j = 0;
   for (i = 2; i < 15; i++) {
-    cards[j++] = "h" + i;
-    cards[j++] = "d" + i;
-    cards[j++] = "c" + i;
-    cards[j++] = "s" + i;
+    cards[j++] = 'h' + i;
+    cards[j++] = 'd' + i;
+    cards[j++] = 'c' + i;
+    cards[j++] = 's' + i;
   }
 }
 
