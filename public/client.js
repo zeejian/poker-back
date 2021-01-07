@@ -38,11 +38,15 @@ socket.on('options1', function (player) {
   document.getElementById('fold' + id).hidden = '';
   document.getElementById('call' + id).hidden = '';
   document.getElementById('raise' + id).hidden = '';
-  document.getElementById('myRange' + id).max = player.bankroll;
-  document.getElementById('myRange' + id).min = player.minToCall;
-  document.getElementById('myRange' + id).value = document.getElementById(
-    'myRange' + id
-  ).min;
+  if (player.bankroll > player.minToCall) {
+    document.getElementById('myRange' + id).max = player.bankroll;
+    document.getElementById('myRange' + id).min = player.minToCall;
+    document.getElementById('myRange' + id).value = document.getElementById(
+      'myRange' + id
+    ).min;
+  } else {
+    //use 'all in' button instead of 'raise', displayed options are 'fold', 'all in'
+  }
 });
 
 socket.on('options2', function (player) {
@@ -51,11 +55,13 @@ socket.on('options2', function (player) {
   document.getElementById('fold' + id).hidden = '';
   document.getElementById('check' + id).hidden = '';
   document.getElementById('raise' + id).hidden = '';
-  document.getElementById('myRange' + id).max = player.bankroll;
-  document.getElementById('myRange' + id).min = player.minToCall;
-  document.getElementById('myRange' + id).value = document.getElementById(
-    'myRange' + id
-  ).min;
+  if (player.bankroll > player.minToCall) {
+    document.getElementById('myRange' + id).max = player.bankroll;
+    document.getElementById('myRange' + id).min = player.minToCall;
+    document.getElementById('myRange' + id).value = document.getElementById(
+      'myRange' + id
+    ).min;
+  }
 });
 
 const joinSeatButton = document.getElementsByName('seat');
@@ -179,6 +185,10 @@ const playerActionSlideButton = document.getElementsByName('myRange');
 playerActionSlideButton.forEach(function (eachButton) {
   eachButton.addEventListener('mouseup', function (e) {
     console.log('betting ammount is ' + eachButton.value);
+    socket.emit('playerActionRaise', {
+      player_id: eachButton.getAttribute('id').slice(-1),
+      bet: eachButton.value,
+    });
     document.getElementById(
       'raiseSlider' + eachButton.getAttribute('id').slice(-1)
     ).style.display = 'none';

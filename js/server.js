@@ -197,11 +197,17 @@ io.on('connection', function (socket) {
   });
   //incoming data should contain player_id, betting amount
   socket.on('playerActionRaise', function (data) {
-    console.log('received the user action raise event.');
-    socket.emit('raiseMsg', data.player_id);
+    console.log(
+      'received the user action raise event, player id :' +
+        data.player_id +
+        ', betting amount:' +
+        data.bet
+    );
+    //socket.emit('raiseMsg', data.player_id);
 
     player = getIdPlayer(parseInt(data.player_id));
-    player.subtotal_bet = data.bet;
+    updatePlayerBet(data.player_id, parseInt(data.bet));
+    //player.subtotal_bet = data.bet;
     //should validate players account balance, betting amount
     //or we calculate and send options with possible maximum one can bet
 
@@ -265,7 +271,8 @@ function sendToPlayer(socket_player, aPlayer) {
       if (highestBet - aPlayer.subtotal_bet <= aPlayer.bankroll) {
         aPlayer.minToCall = highestBet - aPlayer.subtotal_bet;
       } else {
-        io.to(key).emit('options3', aPlayer); //options3 : fold, all in
+        aPlayer.minToCall = aPlayer.bankroll;
+        //io.to(key).emit('options3', aPlayer); //options3 : fold, all in
       }
 
       if (aPlayer.subtotal_bet != highestBet) {
@@ -273,16 +280,9 @@ function sendToPlayer(socket_player, aPlayer) {
       } else {
         io.to(key).emit('options2', aPlayer); //options2 : fold, raise, check
       }
+      console.log('players info : ' + JSON.stringify(aPlayer));
     }
-    console.log('players info : ' + JSON.stringify(aPlayer));
   });
-
-  // player_json = JSON.stringify(aPlayer);
-  // socket_player.forEach((value, key, map) =>{
-  //     if(JSON.stringify(value) == player_json){
-  //         io.to(key).emit('options', aPlayer.player_id); //callback when the loop finishes
-  //     }
-  // })
 }
 //update a player's info with player_id == id, jTag field with new value jVal
 function updatePlayerRole(id, jVal) {
