@@ -32,12 +32,30 @@ socket.on('layRiverCard', function (cards) {
   document.getElementById('imgRiverCard').height = 140;
 });
 
-socket.on('options', function (id) {
+socket.on('options1', function (player) {
+  id = player.player_id;
+  console.log('the client receives player id: ' + id);
+  document.getElementById('fold' + id).hidden = '';
+  document.getElementById('call' + id).hidden = '';
+  document.getElementById('raise' + id).hidden = '';
+  document.getElementById('myRange' + id).max = player.bankroll;
+  document.getElementById('myRange' + id).min = player.minToCall;
+  document.getElementById('myRange' + id).value = document.getElementById(
+    'myRange' + id
+  ).min;
+});
+
+socket.on('options2', function (player) {
+  id = player.player_id;
   console.log('the client receives player id: ' + id);
   document.getElementById('fold' + id).hidden = '';
   document.getElementById('check' + id).hidden = '';
   document.getElementById('raise' + id).hidden = '';
-  document.getElementById('call' + id).hidden = '';
+  document.getElementById('myRange' + id).max = player.bankroll;
+  document.getElementById('myRange' + id).min = player.minToCall;
+  document.getElementById('myRange' + id).value = document.getElementById(
+    'myRange' + id
+  ).min;
 });
 
 const joinSeatButton = document.getElementsByName('seat');
@@ -161,11 +179,15 @@ const playerActionSlideButton = document.getElementsByName('myRange');
 playerActionSlideButton.forEach(function (eachButton) {
   eachButton.addEventListener('mouseup', function (e) {
     console.log('betting ammount is ' + eachButton.value);
-    document.getElementById('raiseSlider' + eachButton.getAttribute('id').slice(-1)).style.display = 'none';
+    document.getElementById(
+      'raiseSlider' + eachButton.getAttribute('id').slice(-1)
+    ).style.display = 'none';
   });
   eachButton.addEventListener('input', function (e) {
     console.log('showing ammount ' + eachButton.value);
-    document.getElementById('amount' +eachButton.getAttribute('id').slice(-1)).innerHTML=eachButton.value;
+    document.getElementById(
+      'amount' + eachButton.getAttribute('id').slice(-1)
+    ).innerHTML = eachButton.value;
   });
 });
 

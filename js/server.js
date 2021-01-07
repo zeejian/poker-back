@@ -169,7 +169,7 @@ io.on('connection', function (socket) {
 
         //send options to the next player of button
         button = getRolePlayers('button')[0];
-        sendToPlayer(socketToPlayerMap, getNextPlayer(button));
+        sendToPlayer(socketToPlayerMap, getNextPlayer(button)); //dont send call option
       } else {
         //check done from small to button
         // new flag checked?
@@ -183,7 +183,7 @@ io.on('connection', function (socket) {
             }
           }
           button = getRolePlayers('button')[0];
-          sendToPlayer(socketToPlayerMap, getNextPlayer(button));
+          sendToPlayer(socketToPlayerMap, getNextPlayer(button)); //dont send call option
         } else {
           next = getNextPlayer(player);
           sendToPlayer(socketToPlayerMap, next);
@@ -262,9 +262,19 @@ function sendToAllPlayers(cards) {
 function sendToPlayer(socket_player, aPlayer) {
   socket_player.forEach((value, key, map) => {
     if (value.player_id == aPlayer.player_id) {
-      console.log('players info : ' + JSON.stringify(aPlayer));
-      io.to(key).emit('options', aPlayer.player_id); //callback when the loop finishes
+      if (highestBet - aPlayer.subtotal_bet <= aPlayer.bankroll) {
+        aPlayer.minToCall = highestBet - aPlayer.subtotal_bet;
+      } else {
+        io.to(key).emit('options3', aPlayer); //options3 : fold, all in
+      }
+
+      if (aPlayer.subtotal_bet != highestBet) {
+        io.to(key).emit('options1', aPlayer); //options1 : fold, raise, call
+      } else {
+        io.to(key).emit('options2', aPlayer); //options2 : fold, raise, check
+      }
     }
+    console.log('players info : ' + JSON.stringify(aPlayer));
   });
 
   // player_json = JSON.stringify(aPlayer);
