@@ -320,12 +320,21 @@ function analyzeHand(cards) {
       //4_OF_A_KIND
       return result;
     } else {
-      result = check3ofaKind(cards);
+      aSet = check3ofaKind(cards);
       if (result.type == 'SET') {
         //exclude 3 same cards
-        result = checkPair(result.card);
-        if (result.type == 'PAIR') {
+        restCards = getRestCards(aSet.cards, cards);
+        aPair = checkPair(restCards);
+        if (aPair.type == 'PAIR') {
           //FULLHOUSE
+          aFullHouse = [];
+          aSet.forEach((e) => {
+            aFullHouse.push(e);
+          });
+          aPair.forEach((e) => {
+            aFullHouse.push(e);
+          });
+          return { type: 'FULLHOUSE', card: aFullHouse };
         } else {
           result = checkStraight(cards);
           if (result.type == 'STRAIGHT') {
@@ -354,20 +363,40 @@ function analyzeHand(cards) {
   }
 }
 
-function check4ofaKind(cards) {
-  for (var j = 0; j < cards.length - 4; j++) {
-    fourOfaKindCards = [];
-    for (var i = j+1; i < cards.length; i++) {
-        fourOfaKindCards.push(cards[j]);
-        if(cards[j].slice(1) == cards[i].slice(1)){
-            fourOfaKindCards.push(cards[i]);
-        }
+function getRestCards(small, whole) {
+  let diff = whole.filter((x) => !small.includes(x));
+  return diff;
+}
+function checkSet(cards) {
+  for (var j = 0; j < cards.length - 2; j++) {
+    setCards = [];
+    for (var i = j + 1; i < cards.length; i++) {
+      setCards.push(cards[j]);
+      if (cards[j].slice(1) == cards[i].slice(1)) {
+        setCards.push(cards[i]);
+      }
     }
-    if(fourOfaKindCards.length == 4){
-        return { type: '4_OF_A_KIND', card: cards };
+    if (setCards.length == 3) {
+      return { type: 'SET', card: setCards };
     }
   }
-  return { type: 'HIGH_CARD', card: fourOfaKindCards };
+  return { type: 'HIGH_CARD', card: cards };
+}
+
+function check4ofaKind(cards) {
+  for (var j = 0; j < cards.length - 3; j++) {
+    fourOfaKindCards = [];
+    for (var i = j + 1; i < cards.length; i++) {
+      fourOfaKindCards.push(cards[j]);
+      if (cards[j].slice(1) == cards[i].slice(1)) {
+        fourOfaKindCards.push(cards[i]);
+      }
+    }
+    if (fourOfaKindCards.length == 4) {
+      return { type: '4_OF_A_KIND', card: fourOfaKindCards };
+    }
+  }
+  return { type: 'HIGH_CARD', card: cards };
 }
 
 function checkStraightFlush(cards) {
