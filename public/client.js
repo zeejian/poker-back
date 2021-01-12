@@ -197,7 +197,7 @@ playerActionSlideButton.forEach(function (eachButton) {
     console.log('showing ammount ' + eachButton.value);
     document.getElementById(
       'amount' + eachButton.getAttribute('id').slice(-1)
-    ).innerHTML = eachButton.value;
+    ).innerHTML = eachButton.value; //update <p>content</p> using innerHTML
   });
 });
 

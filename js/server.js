@@ -10,6 +10,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 //globals
 var playerList = [];
+var communityCards = [];
 var cards = new Array(52);
 var socketToPlayerMap = new Map(); //(socket.id, Player)
 var isGameOn = false;
@@ -97,6 +98,12 @@ io.on('connection', function (socket) {
     //fold the card as well?
 
     if (nrOfactivePlayers < 2) {
+      //congrats winnner,
+
+      //winner takes the pot,
+
+      //wait for seconds to start new round
+
       console.log('this round ended.');
       isGameOn = false;
       if (!isGameOn) {
@@ -126,18 +133,23 @@ io.on('connection', function (socket) {
       //if the next players bet is less than the highestBet, we dont give option 'check'?
       if (next.subtotal_bet == highestBet && next.player_id != big.player_id) {
         console.log('this is where we start dealing the next card(s)');
-        dealCommunityCards();
-        //reset highestBet and subtotal_bet to 0?
-        for (var i = 0; i < playerList.length; i++) {
-          if (playerList[i].status == 'active') {
-            playerList[i].subtotal_bet = 0;
+        if (gameStage != 'river') {
+          dealCommunityCards();
+          //reset highestBet and subtotal_bet to 0?
+          for (var i = 0; i < playerList.length; i++) {
+            if (playerList[i].status == 'active') {
+              playerList[i].subtotal_bet = 0;
+            }
           }
-        }
-        highestBet = 0;
+          highestBet = 0;
 
-        //send options to the next player of button
-        button = getRolePlayers('button')[0];
-        sendToPlayer(socketToPlayerMap, getNextPlayer(button));
+          //send options to the next player of button
+          button = getRolePlayers('button')[0];
+          sendToPlayer(socketToPlayerMap, getNextPlayer(button));
+        } else {
+          handleShowDown();
+          gameStage = 'preFlop';
+        }
       } else {
         sendToPlayer(socketToPlayerMap, next);
       }
@@ -158,32 +170,42 @@ io.on('connection', function (socket) {
     if (highestBet == player.subtotal_bet) {
       if (player.subtotal_bet != 0) {
         // big blind to start the flop
-        dealCommunityCards();
-        //reset highestBet and subtotal_bet to 0?
-        for (var i = 0; i < playerList.length; i++) {
-          if (playerList[i].status == 'active') {
-            playerList[i].subtotal_bet = 0;
+        if (gameStage != 'river') {
+          dealCommunityCards();
+          //reset highestBet and subtotal_bet to 0?
+          for (var i = 0; i < playerList.length; i++) {
+            if (playerList[i].status == 'active') {
+              playerList[i].subtotal_bet = 0;
+            }
           }
-        }
-        highestBet = 0;
+          highestBet = 0;
 
-        //send options to the next player of button
-        button = getRolePlayers('button')[0];
-        sendToPlayer(socketToPlayerMap, getNextPlayer(button)); //dont send call option
+          //send options to the next player of button
+          button = getRolePlayers('button')[0];
+          sendToPlayer(socketToPlayerMap, getNextPlayer(button)); //dont send call option
+        } else {
+          handleShowDown();
+          gameStage = 'preFlop';
+        }
       } else {
         //check done from small to button
         // new flag checked?
         if (getNextPlayer(player).hasChecked) {
-          //deal
-          dealCommunityCards();
-          //reset hasChecked flag
-          for (var i = 0; i < playerList.length; i++) {
-            if (playerList[i].status == 'active') {
-              playerList[i].hasChecked = false;
+          if (gameStage != 'river') {
+            //deal
+            dealCommunityCards();
+            //reset hasChecked flag
+            for (var i = 0; i < playerList.length; i++) {
+              if (playerList[i].status == 'active') {
+                playerList[i].hasChecked = false;
+              }
             }
+            button = getRolePlayers('button')[0];
+            sendToPlayer(socketToPlayerMap, getNextPlayer(button)); //dont send call optio
+          } else {
+            handleShowDown();
+            gameStage = 'preFlop';
           }
-          button = getRolePlayers('button')[0];
-          sendToPlayer(socketToPlayerMap, getNextPlayer(button)); //dont send call option
         } else {
           next = getNextPlayer(player);
           sendToPlayer(socketToPlayerMap, next);
@@ -227,29 +249,177 @@ function dealCommunityCards() {
     //send to all players 3 cards
     //set to flop
     drawCards(1);
-    sendToAllPlayers({ cardType: 'flop', card: drawCards(3) });
+    flop = drawCards(3);
+    flop.forEach((e) => {
+      communityCards.push(e);
+    });
+    sendToAllPlayers({ cardType: 'flop', card: flop });
     gameStage = 'flop';
   } else if (gameStage == 'flop') {
     //send turn card
     //set to turn
     drawCards(1);
-    sendToAllPlayers({ cardType: 'turn', card: drawCards(1)[0] });
+    turn = drawCards(1)[0];
+    communityCards.push(turn);
+    sendToAllPlayers({ cardType: 'turn', card: turn });
     gameStage = 'turn';
   } else if (gameStage == 'turn') {
     //send river card
     //set to river
     drawCards(1);
-    sendToAllPlayers({ cardType: 'river', card: drawCards(1)[0] });
+    river = drawCards(1)[0];
+    communityCards.push(river);
+    sendToAllPlayers({ cardType: 'river', card: river });
     gameStage = 'river';
   } else if (gameStage == 'river') {
     //check result
     //set to preFlop, at starGame?
-    checkWinner();
-    gameStage = 'preFlop';
+    //handleShowDown();
+    //gameStage = 'preFlop';
   }
 }
 
-function checkWinnter() {}
+function handleShowDown() {
+  //loop through active players:
+  //analyze hands of each player, best 5 cards of carda, cardb, plus community cards
+  //compare hands
+  for (var i = 0; i < playerList.length; i++) {
+    if (playerList[i].status == 'active') {
+      //check flush
+      cardset = [];
+      cardset.push(playerList[i].carda);
+      cardset.push(playerList[i].cardb);
+      communityCards.forEach((e) => {
+        cardset.push(e);
+      });
+
+      cardset.sort((a, b) => {
+        return a.slice(1) - b.slice(1);
+      });
+      console.log(cardset);
+      analyzeHand(cardset);
+    }
+  }
+}
+
+function analyzeHand(cards) {
+  result = checkFlush(cards);
+  if (result.type == 'FLUSH') {
+    result = checkStraightFlush(result.card);
+    if (result.type == 'STRAIGHT_FLUSH') {
+      //STRIGHT_FLUSH
+      return result;
+    } else {
+      //FLUSH
+      result.card = result.card.slice(0, 5);
+      return result;
+    }
+  } else {
+    result = check4ofaKind(cards);
+    if (result.type == '4_OF_A_KIND') {
+      //4_OF_A_KIND
+      return result;
+    } else {
+      result = check3ofaKind(cards);
+      if (result.type == 'SET') {
+        //exclude 3 same cards
+        result = checkPair(result.card);
+        if (result.type == 'PAIR') {
+          //FULLHOUSE
+        } else {
+          result = checkStraight(cards);
+          if (result.type == 'STRAIGHT') {
+            //STRAIGHT
+          } else {
+            // SET
+            return;
+          }
+        }
+      } else {
+        result = checkPair(cards);
+        if (result.type == 'PAIR') {
+          result = checkPair(result.card);
+          if (result.type == 'PAIR') {
+            //2 PAIR
+            return;
+          } else {
+            // 1 PAIR
+          }
+        } else {
+          // HIGH_CARD
+          return;
+        }
+      }
+    }
+  }
+}
+
+function check4ofaKind(cards) {
+  for (var j = 0; j < cards.length - 4; j++) {
+    fourOfaKindCards = [];
+    for (var i = j+1; i < cards.length; i++) {
+        fourOfaKindCards.push(cards[j]);
+        if(cards[j].slice(1) == cards[i].slice(1)){
+            fourOfaKindCards.push(cards[i]);
+        }
+    }
+    if(fourOfaKindCards.length == 4){
+        return { type: '4_OF_A_KIND', card: cards };
+    }
+  }
+  return { type: 'HIGH_CARD', card: fourOfaKindCards };
+}
+
+function checkStraightFlush(cards) {
+  //sort cards big to small, first hit possible biggist straightflush
+  for (var j = 0; j < cards.length - 4; j++) {
+    sfCards = [];
+    for (var i = j; i < j + 4; i++) {
+      if (cards[i + 1].slice(1) == cards[i].slice(1) - 1) {
+        sfCards.push(cards[i]);
+      } else {
+        break;
+      }
+    }
+    if (sfCards.length == 5) {
+      return { type: 'STRAIGHT_FLUSH', card: sfCards };
+    }
+  }
+  return { type: 'FLUSH', card: cards };
+}
+
+function checkFlush(cards) {
+  hearts = [];
+  spades = [];
+  diamonds = [];
+  clubs = [];
+
+  cards.forEach((e) => {
+    suit = e.slice(0, 1);
+    if (suit == 'h') {
+      hearts.push(e);
+    } else if (suit == 's') {
+      spades.push(e);
+    } else if (suit == 'd') {
+      diamonds.push(e);
+    } else if (suit == 'c') {
+      clubs.push(e);
+    }
+  });
+
+  if (hearts.length >= 5) {
+    return { type: 'FLUSH', card: hearts };
+  } else if (spades.length >= 5) {
+    return { type: 'FLUSH', card: spades };
+  } else if (diamonds.length >= 5) {
+    return { type: 'FLUSH', card: diamonds };
+  } else if (clubs.length >= 5) {
+    return { type: 'FLUSH', card: clubs };
+  } else {
+    return { type: 'HIGH_CARD', card: cards };
+  }
+}
+module.exports = analyzeHand;
 
 function sendToAllPlayers(cards) {
   socketToPlayerMap.forEach((value, key, map) => {
