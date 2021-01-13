@@ -1,1 +1,0 @@
-const hand = require('../js/server');
