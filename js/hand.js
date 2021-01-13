@@ -18,46 +18,51 @@ function analyzeHand(cards) {
       aSet = checkSet(cards);
       if (aSet.type == 'SET') {
         //exclude 3 same cards
-        restCards = getRestCards(aSet.cards, cards);
+        restCards = getRestCards(aSet.card, cards);
         aPair = checkPair(restCards);
         if (aPair.type == 'PAIR') {
           //FULLHOUSE
           aFullHouse = [];
-          aSet.forEach((e) => {
+          aSet.card.forEach((e) => {
             aFullHouse.push(e);
           });
-          aPair.forEach((e) => {
+          aPair.card.forEach((e) => {
             aFullHouse.push(e);
           });
           return { type: 'FULLHOUSE', card: aFullHouse };
         } else {
           //do nothing, if it is no fullhouse
+          straight = checkStraight(cards);
+          if (straight.type == 'STRAIGHT') {
+            //STRAIGHT
+            return straight;
+          } else {
+            return aSet;
+          }
         }
       } else {
         straight = checkStraight(cards);
         if (straight.type == 'STRAIGHT') {
           //STRAIGHT
           return straight;
-        } else if (aSet.type == 'SET') {
-          return { type: 'SET', card: aSet };
         } else {
           pair1 = checkPair(cards);
           if (pair1.type == 'PAIR') {
-            restCards = getRestCards(pair1.cards, cards);
+            restCards = getRestCards(pair1.card, cards);
             pair2 = checkPair(restCards);
             if (pair2.type == 'PAIR') {
               //2 PAIR
               twoPair = [];
-              pair1.forEach((e) => {
+              pair1.card.forEach((e) => {
                 twoPair.push(e);
               });
-              pair2.forEach((e) => {
+              pair2.card.forEach((e) => {
                 twoPair.push(e);
               });
               return { type: '2PAIR', card: twoPair };
             } else {
               // 1 PAIR
-              return { type: 'PAIR', card: pair1 };
+              return pair1;
             }
           } else {
             // HIGH_CARD
@@ -72,13 +77,13 @@ function analyzeHand(cards) {
 function checkPair(cards) {
   for (var j = 0; j < cards.length - 1; j++) {
     pairCards = [];
+    pairCards.push(cards[j]);
     for (var i = j + 1; i < cards.length; i++) {
-      pairCards.push(cards[j]);
       if (cards[j].slice(1) == cards[i].slice(1)) {
         pairCards.push(cards[i]);
       }
     }
-    if (pairCards.length == 3) {
+    if (pairCards.length == 2) {
       return { type: 'PAIR', card: pairCards };
     }
   }
@@ -86,11 +91,14 @@ function checkPair(cards) {
 }
 
 function checkStraight(cards) {
-  for (var j = 0; j < cards.length - 4; j++) {
+  combo = generateCardCombo(cards);
+
+  for (var i = 0; i < combo.length; i++) {
     stCards = [];
-    for (var i = j; i < j + 4; i++) {
-      if (cards[i + 1].slice(1) == cards[i].slice(1) - 1) {
-        stCards.push(cards[i]);
+    stCards.push(combo[i][0]);
+    for (var j = 1; j < 5; j++) {
+      if (combo[i][j].slice(1) == combo[i][j - 1].slice(1) - 1) {
+        stCards.push(combo[i][j]);
       } else {
         break;
       }
@@ -102,6 +110,30 @@ function checkStraight(cards) {
   return { type: 'HIGH_CARD', card: cards };
 }
 
+//generate C(7, 5)
+function generateCardCombo(cards) {
+  res = [];
+  for (var i = cards.length - 1; i >= 1; i--) {
+    rest1 = cards.slice(0, i);
+    rest2 = cards.slice(i + 1, cards.length);
+    for (var j = i - 1; j >= 0; j--) {
+      first = rest1.slice(0, j);
+      second = [];
+      if (j != i - 1) {
+        second = rest1.slice(j + 1, i);
+      }
+      second.forEach((e) => {
+        first.push(e);
+      });
+      rest2.forEach((e) => {
+        first.push(e);
+      });
+      res.push(first);
+    }
+  }
+  return res;
+}
+
 function getRestCards(small, whole) {
   let diff = whole.filter((x) => !small.includes(x));
   return diff;
@@ -109,8 +141,8 @@ function getRestCards(small, whole) {
 function checkSet(cards) {
   for (var j = 0; j < cards.length - 2; j++) {
     setCards = [];
+    setCards.push(cards[j]);
     for (var i = j + 1; i < cards.length; i++) {
-      setCards.push(cards[j]);
       if (cards[j].slice(1) == cards[i].slice(1)) {
         setCards.push(cards[i]);
       }
@@ -208,4 +240,8 @@ module.exports = {
   checkStraightFlush,
   analyzeHand,
   getRestCards,
+  checkSet,
+  checkPair,
+  checkStraight,
+  generateCardCombo,
 };
