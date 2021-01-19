@@ -4,7 +4,7 @@ var bodyParser = require('body-parser');
 const app = express();
 const server = require('http').Server(app);
 const io = require('socket.io')(server);
-const analyzeHand = require('./hand').analyzeHand
+const getAnalyzedHand = require('./hand').getAnalyzedHand;
 
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -299,9 +299,33 @@ function handleShowDown() {
       });
       console.log(cardset);
       //sort cardset from big to small
-      analyzeHand(cardset);
+      playerHand = getAnalyzedHand(cardset);
+      playerList[i].hand = playerHand;
     }
   }
+  sortedPlayers = sortHandType(playerList);
+  console.log(sortedPlayers);
+  //sortedPlayers.slice(0, 2);
+
+  winner = getWinner(sortedPlayers[0], sortedPlayers[1]);
+  sendToPlayerResult(winner);
+}
+
+function sendToPlayerResult(aPlayer) {
+  socketToPlayerMap.forEach((value, key, map) => {
+    if (value.player_id == aPlayer.player_id) {
+      io.to(key).emit('winnerMsg', aPlayer);
+    } else {
+      io.to(key).emit('losersMsg', value);
+    }
+  });
+}
+
+function sortHandType(pList) {
+  pList.sort((a, b) => {
+    return b.hand.type - a.hand.type;
+  });
+  return pList;
 }
 
 // function analyzeHand(cards) {
@@ -432,7 +456,7 @@ function handleShowDown() {
 //   for (var j = 0; j < cards.length - 3; j++) {
 //     fourOfaKindCards = [];
 //     fourOfaKindCards.push(cards[j]);
-//     for (var i = j + 1; i < cards.length; i++) {     
+//     for (var i = j + 1; i < cards.length; i++) {
 //       if (cards[j].slice(1) == cards[i].slice(1)) {
 //         fourOfaKindCards.push(cards[i]);
 //       }

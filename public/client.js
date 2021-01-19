@@ -61,8 +61,23 @@ socket.on('options2', function (player) {
     document.getElementById('myRange' + id).value = document.getElementById(
       'myRange' + id
     ).min;
-  }
+  } //else show 'allIn' button
 });
+
+socket.on('winnerMsg', function(player){
+  id = player.player_id;
+  console.log('the client receives winnerMsg event, with player id: ' + id);
+
+  document.getElementById('shownMsg'+id).hidden = '';
+  document.getElementById('shownMsg'+id).innerHTML = 'Congratulations! YOU WIN!';
+
+})
+
+socket.on('losersMsg', function(player){
+  id = player.player_id;
+  console.log('the client receives losersMsg event, with player id: ' + id);
+
+})
 
 const joinSeatButton = document.getElementsByName('seat');
 joinSeatButton.forEach(function (eachButton) {
