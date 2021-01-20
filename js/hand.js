@@ -269,48 +269,50 @@ function sortNumber(cards) {
   });
   return cards;
 }
-
-function getWinner(cardsSet1, cardSet2) {
-  if (cardsSet1.type == cardSet2.type) {
-    cardSet = getMax(cardsSet1.card[0], cardsSet2.card[0]);
-    if (cardSet == 'draw') {
-      cardSet = getMax(cardsSet1.card[1], cardsSet2.card[1]);
-      if (cardSet == 'draw') {
-        cardSet = getMax(cardsSet1.card[2], cardsSet2.card[2]);
-        if (cardSet == 'draw') {
-          cardSet = getMax(cardsSet1.card[3], cardsSet2.card[3]);
-          if (cardSet == 'draw') {
-            cardSet = getMax(cardsSet1.card[4], cardsSet2.card[4]);
-            if (cardSet == 'draw') {
-              return [cardSet1, cardSet2];
-            } else {
-              return cardSet;
-            }
-          } else {
-            return cardSet;
-          }
-        } else {
-          return cardSet;
-        }
-      } else {
-        return cardSet;
-      }
-    } else {
-      cardsSet;
-    }
+//compare 2 hands, return the player with better hand
+function compareHands(player1, player2) {
+  if (player1.hand.type == player2.hand.type) {
+    index = 0;
+    return getMaxCardPlayer(player1, player2, index);
   } else {
-    return cardsSet1;
+    return player1;
   }
 }
 
-function getMax(card1, card2) {
-  if (card1.slice(1) > card2.slice(1)) {
-    return card1;
-  } else if (card1.slice(1) < card2.slice(1)) {
-    return card;
+function getMaxCardPlayer(player1, player2, ind) {
+  winners = [];
+  if (player1.hand.card[ind].slice(1) == player2.hand.card[ind].slice(1)) {
+    ind++;
+    if (ind != 4) {
+      return getMaxCardPlayer(player1, player2, ind);
+    } else {
+      winners.push(player1);
+      winners.push(player2);
+    }
+  } else if (
+    player1.hand.card[ind].slice(1) > player2.hand.card[ind].slice(1)
+  ) {
+    winners.push(player1);
   } else {
-    return 'draw';
+    winners.push(player2);
   }
+  return winners;
+}
+
+function getWinners(playerList) {
+  winnerArr = [];
+  for (var ind = 1; ind < playerList.length; ind++) {
+    winner = compareHands(playerList[ind - 1], playerList[ind]);
+    if (ind == 1) {
+      winnerArr.push(winner[0]);
+    }
+    if (winner.length > 1) {
+      winnerArr.push(winner[1]);
+    } else {
+      break;
+    }
+  }
+  return winnerArr;
 }
 
 //module.exports = server;
@@ -325,5 +327,6 @@ module.exports = {
   checkPair,
   checkStraight,
   generateCardCombo,
-  getWinner,
+  compareHands,
+  getWinners,
 };

@@ -70,6 +70,7 @@ socket.on('winnerMsg', function(player){
 
   document.getElementById('shownMsg'+id).hidden = '';
   document.getElementById('shownMsg'+id).innerHTML = 'Congratulations! YOU WIN!';
+  //highlight the winning card
 
 })
 

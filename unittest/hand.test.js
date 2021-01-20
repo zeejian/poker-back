@@ -67,50 +67,169 @@ const hand = require('../js/hand');
 //   })
 // })
 
-test('testAnalyze-1pair', ()=>{
-  expect(hand.getAnalyzedHand(['h13', 'c12', 'd10','c10', 'c8','c7'])).toEqual({
-    type:'1',
-    card:['d10', 'c10', 'h13', 'c12', 'c8']
-  })
-})
+test('testAnalyze-1pair', () => {
+  expect(
+    hand.getAnalyzedHand(['h13', 'c12', 'd10', 'c10', 'c8', 'c7'])
+  ).toEqual({
+    type: '1',
+    card: ['d10', 'c10', 'h13', 'c12', 'c8'],
+  });
+});
 
-test('testAnalyze-2pair', ()=>{
-  expect(hand.getAnalyzedHand(['h13', 'c12', 'd10','c10', 'c8','d8'])).toEqual({
-    type:'2',
-    card:['d10', 'c10', 'c8','d8', 'h13']
-  })
-})
+test('testAnalyze-2pair', () => {
+  expect(
+    hand.getAnalyzedHand(['h13', 'c12', 'd10', 'c10', 'c8', 'd8'])
+  ).toEqual({
+    type: '2',
+    card: ['d10', 'c10', 'c8', 'd8', 'h13'],
+  });
+});
 
-test('testAnalyze-set', ()=>{
-  expect(hand.getAnalyzedHand(['h13', 'c12', 'd10','c10', 'h10','d8'])).toEqual({
-    type:'3',
-    card:['d10', 'c10', 'h10', 'h13', 'c12']
-  })
-})
+test('testAnalyze-set', () => {
+  expect(
+    hand.getAnalyzedHand(['h13', 'c12', 'd10', 'c10', 'h10', 'd8'])
+  ).toEqual({
+    type: '3',
+    card: ['d10', 'c10', 'h10', 'h13', 'c12'],
+  });
+});
 
-test('testAnalyze-straight', ()=>{
-  expect(hand.getAnalyzedHand(['h13', 'c12', 'd12','h12', 's11','d10','c9'])).toEqual({
-    type:'4',
-    card:['h13', 'c12', 's11','d10','c9']
-  })
+test('testAnalyze-straight', () => {
+  expect(
+    hand.getAnalyzedHand(['h13', 'c12', 'd12', 'h12', 's11', 'd10', 'c9'])
+  ).toEqual({
+    type: '4',
+    card: ['h13', 'c12', 's11', 'd10', 'c9'],
+  });
 
-  expect(hand.getAnalyzedHand(['h14', 'c12', 'd12','c5', 's4','d3','c2'])).toEqual({
-    type:'4',
-    card:['c5', 's4','d3','c2', 'h14']
-  })
+  expect(
+    hand.getAnalyzedHand(['h14', 'c12', 'd12', 'c5', 's4', 'd3', 'c2'])
+  ).toEqual({
+    type: '4',
+    card: ['c5', 's4', 'd3', 'c2', 'h14'],
+  });
 
-  expect(hand.getAnalyzedHand(['h14', 'c13', 'd12','c5', 's11','d10','c9'])).toEqual({
-    type:'4',
-    card:['h14', 'c13','d12','s11', 'd10']
-  })
-})
+  expect(
+    hand.getAnalyzedHand(['h14', 'c13', 'd12', 'c5', 's11', 'd10', 'c9'])
+  ).toEqual({
+    type: '4',
+    card: ['h14', 'c13', 'd12', 's11', 'd10'],
+  });
+});
 
-test('testAnalyze-flush', ()=>{
-  expect(hand.getAnalyzedHand(['h13', 'h12', 'd12','s11','h10','h3', 'h2'])).toEqual({
-    type:'5',
-    card:['h13', 'h12', 'h10','h3','h2']
-  })
-})
+test('testAnalyze-flush', () => {
+  expect(
+    hand.getAnalyzedHand(['h13', 'h12', 'd12', 's11', 'h10', 'h3', 'h2'])
+  ).toEqual({
+    type: '5',
+    card: ['h13', 'h12', 'h10', 'h3', 'h2'],
+  });
+});
+
+test('testCompareHands', () => {
+  expect(
+    hand.compareHands(
+      {
+        player_id: '1',
+        hand: { type: '0', card: ['h13', 'h12', 's10', 'h3', 'h2'] },
+      },
+      {
+        player_id: '2',
+        hand: { type: '0', card: ['c13', 'c12', 'c10', 's3', 's2'] },
+      }
+    )
+  ).toEqual([
+    {
+      player_id: '1',
+      hand: { type: '0', card: ['h13', 'h12', 's10', 'h3', 'h2'] },
+    },
+    {
+      player_id: '2',
+      hand: { type: '0', card: ['c13', 'c12', 'c10', 's3', 's2'] },
+    },
+  ]);
+
+  expect(
+    hand.compareHands(
+      {
+        player_id: '1',
+        hand: { type: '0', card: ['h13', 'h12', 's10', 'h3', 'h2'] },
+      },
+      {
+        player_id: '2',
+        hand: { type: '0', card: ['c13', 'c12', 'c10', 's3', 's2'] },
+      }
+    ).length
+  ).toBe(2);
+
+  expect(
+    hand.compareHands(
+      {
+        player_id: '1',
+        hand: { type: '0', card: ['h13', 'h12', 's11', 'h3', 'h2'] },
+      },
+      {
+        player_id: '2',
+        hand: { type: '0', card: ['c13', 'c12', 'c10', 's3', 's2'] },
+      }
+    )
+  ).toEqual([
+    {
+      player_id: '1',
+      hand: { type: '0', card: ['h13', 'h12', 's11', 'h3', 'h2'] },
+    },
+  ]);
+
+  expect(
+    hand.compareHands(
+      {
+        player_id: '1',
+        hand: { type: '0', card: ['h13', 'h12', 's11', 'h3', 'h2'] },
+      },
+      {
+        player_id: '2',
+        hand: { type: '0', card: ['c13', 'c12', 'd12', 's3', 's2'] },
+      }
+    )
+  ).toEqual([
+    {
+      player_id: '2',
+      hand: { type: '0', card: ['c13', 'c12', 'd12', 's3', 's2'] },
+    },
+  ]);
+});
+
+test('testGetWinners', () => {
+  expect(
+    hand.getWinners([
+      {
+        player_id: '1',
+        hand: { type: '0', card: ['h13', 'h12', 's10', 'h3', 'h2'] },
+      },
+      {
+        player_id: '2',
+        hand: { type: '0', card: ['c13', 'c12', 'c10', 's3', 's2'] },
+      },
+      {
+        player_id: '3',
+        hand: { type: '0', card: ['d13', 'd12', 'h10', 'c3', 'd2'] },
+      },
+    ])
+  ).toEqual([
+    {
+      player_id: '1',
+      hand: { type: '0', card: ['h13', 'h12', 's10', 'h3', 'h2'] },
+    },
+    {
+      player_id: '2',
+      hand: { type: '0', card: ['c13', 'c12', 'c10', 's3', 's2'] },
+    },
+    {
+      player_id: '3',
+      hand: { type: '0', card: ['d13', 'd12', 'h10', 'c3', 'd2'] },
+    },
+  ]);
+});
 
 // test('testGenerateCardCombo', ()=>{
 //   expect(hand.generateCardCombo(['h0', 'h1', 'h2','h3', 'h4','h5','h6'])).toEqual({
