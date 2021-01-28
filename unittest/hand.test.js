@@ -229,6 +229,308 @@ test('testGetWinners', () => {
       hand: { type: '0', card: ['d13', 'd12', 'h10', 'c3', 'd2'] },
     },
   ]);
+
+  expect(
+    hand.getWinners([
+      {
+        player_id: '1',
+        hand: { type: '1', card: ['h12', 'd12', 'c9', 'c8', 's5'] },
+      },
+      {
+        player_id: '2',
+        hand: { type: '0', card: ['h12', 'd10', 'c9', 'c8', 'c7'] },
+      },
+    ])
+  ).toEqual([
+    {
+      player_id: '1',
+      hand: { type: '1', card: ['h12', 'd12', 'c9', 'c8', 's5'] },
+    },
+  ]);
+});
+
+test('testGetRankedPlayers', () => {
+  expect(
+    hand.getRankedPlayers([
+      {
+        player_id: '1',
+        hand: { type: '0', card: ['h13', 'h12', 's10', 'h3', 'h2'] },
+      },
+      {
+        player_id: '2',
+        hand: { type: '1', card: ['c13', 'c12', 'c10', 's4', 's2'] },
+      },
+      {
+        player_id: '3',
+        hand: { type: '1', card: ['d14', 'd12', 'h10', 'c3', 'd2'] },
+      },
+    ])
+  ).toEqual([
+    {
+      player_id: '3',
+      hand: { type: '1', card: ['d14', 'd12', 'h10', 'c3', 'd2'] },
+    },
+    {
+      player_id: '2',
+      hand: { type: '1', card: ['c13', 'c12', 'c10', 's4', 's2'] },
+    },
+
+    {
+      player_id: '1',
+      hand: { type: '0', card: ['h13', 'h12', 's10', 'h3', 'h2'] },
+    },
+  ]);
+
+  expect(
+    hand.getRankedPlayers([
+      {
+        player_id: '1',
+        hand: { type: '0', card: ['h13', 'h12', 's10', 'h3', 'h2'] },
+      },
+      {
+        player_id: '2',
+        hand: { type: '1', card: ['c13', 'c12', 'c10', 's4', 's2'] },
+      },
+      {
+        player_id: '3',
+        hand: { type: '1', card: ['d13', 'd12', 'h11', 'c3', 'd2'] },
+      },
+    ])
+  ).toEqual([
+    {
+      player_id: '3',
+      hand: { type: '1', card: ['d13', 'd12', 'h11', 'c3', 'd2'] },
+    },
+    {
+      player_id: '2',
+      hand: { type: '1', card: ['c13', 'c12', 'c10', 's4', 's2'] },
+    },
+
+    {
+      player_id: '1',
+      hand: { type: '0', card: ['h13', 'h12', 's10', 'h3', 'h2'] },
+    },
+  ]);
+
+  expect(
+    hand.getRankedPlayers([
+      {
+        player_id: '1',
+        hand: { type: '0', card: ['h13', 'h12', 's10', 'h3', 'h2'] },
+      },
+      {
+        player_id: '2',
+        hand: { type: '0', card: ['c13', 'c12', 'c10', 's3', 's2'] },
+      },
+      {
+        player_id: '3',
+        hand: { type: '0', card: ['d13', 'd12', 'h10', 'c3', 'd2'] },
+      },
+    ])
+  ).toEqual([
+    {
+      player_id: '1',
+      hand: {
+        type: '0',
+        card: ['h13', 'h12', 's10', 'h3', 'h2'],
+        hasTie: true,
+      },
+    },
+    {
+      player_id: '2',
+      hand: {
+        type: '0',
+        card: ['c13', 'c12', 'c10', 's3', 's2'],
+        hasTie: true,
+      },
+    },
+    {
+      player_id: '3',
+      hand: {
+        type: '0',
+        card: ['d13', 'd12', 'h10', 'c3', 'd2'],
+        hasTie: true,
+      },
+    },
+  ]);
+});
+
+test('testGetRankedPlayers', () => {
+  expect(
+    hand.getRankedPlayers([
+      {
+        player_id: '1',
+        hand: { type: '0', card: ['h13', 'h12', 's10', 'h3', 'h2'] },
+        total_bet: 50,
+      },
+      {
+        player_id: '2',
+        hand: { type: '1', card: ['c13', 'c12', 'c10', 's4', 's2'] },
+        total_bet: 20,
+      },
+      {
+        player_id: '3',
+        hand: { type: '1', card: ['d14', 'd12', 'h10', 'c3', 'd2'] },
+        total_bet: 10,
+      },
+    ])
+  ).toEqual([
+    {
+      player_id: '3',
+      hand: { type: '1', card: ['d14', 'd12', 'h10', 'c3', 'd2'] },
+      total_bet: 10,
+    },
+    {
+      player_id: '2',
+      hand: { type: '1', card: ['c13', 'c12', 'c10', 's4', 's2'] },
+      total_bet: 20,
+    },
+
+    {
+      player_id: '1',
+      hand: { type: '0', card: ['h13', 'h12', 's10', 'h3', 'h2'] },
+      total_bet: 50,
+    },
+  ]);
+});
+
+test('testGetPotsAllocation', () => {
+  expect(
+    hand.getPotsAllocation([
+      {
+        player_id: '1',
+        hand: { type: '0', card: ['h13', 'h12', 's10', 'h3', 'h2'] },
+        total_bet: 50,
+      },
+      {
+        player_id: '2',
+        hand: { type: '1', card: ['c13', 'c12', 'c10', 's4', 's2'] },
+        total_bet: 100,
+      },
+      {
+        player_id: '3',
+        hand: { type: '1', card: ['d14', 'd12', 'h10', 'c3', 'd2'] },
+        total_bet: 200,
+      },
+      {
+        player_id: '4',
+        hand: { type: '1', card: ['d14', 'd12', 'h10', 'c3', 'd2'] },
+        total_bet: 300,
+      },
+    ])
+  ).toEqual([
+    {
+      potOwner: [
+        {
+          player_id: '1',
+          hand: { type: '0', card: ['h13', 'h12', 's10', 'h3', 'h2'] },
+          total_bet: 0,
+        },
+        {
+          player_id: '2',
+          hand: { type: '1', card: ['c13', 'c12', 'c10', 's4', 's2'] },
+          total_bet: 0,
+        },
+        {
+          player_id: '3',
+          hand: { type: '1', card: ['d14', 'd12', 'h10', 'c3', 'd2'] },
+          total_bet: 0,
+        },
+        {
+          player_id: '4',
+          hand: { type: '1', card: ['d14', 'd12', 'h10', 'c3', 'd2'] },
+          total_bet: 100,
+        },
+      ],
+      pot: 200,
+    },
+    {
+      potOwner: [
+        {
+          player_id: '2',
+          hand: { type: '1', card: ['c13', 'c12', 'c10', 's4', 's2'] },
+          total_bet: 0,
+        },
+        {
+          player_id: '3',
+          hand: { type: '1', card: ['d14', 'd12', 'h10', 'c3', 'd2'] },
+          total_bet: 0,
+        },
+        {
+          player_id: '4',
+          hand: { type: '1', card: ['d14', 'd12', 'h10', 'c3', 'd2'] },
+          total_bet: 100,
+        },
+      ],
+      pot: 150,
+    },
+    {
+      potOwner: [
+        {
+          player_id: '3',
+          hand: { type: '1', card: ['d14', 'd12', 'h10', 'c3', 'd2'] },
+          total_bet: 0,
+        },
+        {
+          player_id: '4',
+          hand: { type: '1', card: ['d14', 'd12', 'h10', 'c3', 'd2'] },
+          total_bet: 100,
+        },
+      ],
+      pot: 200,
+    },
+  ]);
+});
+
+test('testDistributeChips', () => {
+  expect(
+    hand.distributeChips([
+      {
+        player_id: '1',
+        hand: { type: '0', card: ['h13', 'h12', 's10', 'h3', 'h2'] },
+        total_bet: 50,
+      },
+      {
+        player_id: '2',
+        hand: { type: '0', card: ['c13', 'c12', 'c10', 's4', 's2'] },
+        total_bet: 100,
+      },
+      {
+        player_id: '3',
+        hand: { type: '0', card: ['d14', 'd12', 'h10', 'c3', 'd2'] },
+        total_bet: 200,
+      },
+      {
+        player_id: '4',
+        hand: { type: '0', card: ['d14', 'd12', 'h10', 'c3', 'd2'] },
+        total_bet: 300,
+      },
+    ])
+  ).toEqual([
+    {
+      player_id: '1',
+      hand: { type: '0', card: ['h13', 'h12', 's10', 'h3', 'h2'] },
+      total_bet: 0,
+      chips: 200,
+    },
+    {
+      player_id: '2',
+      hand: { type: '0', card: ['c13', 'c12', 'c10', 's4', 's2'] },
+      total_bet: 0,
+      chips: 150,
+    },
+    {
+      player_id: '3',
+      hand: { type: '0', card: ['d14', 'd12', 'h10', 'c3', 'd2'] },
+      total_bet: 0,
+      chips: 200,
+    },
+    {
+      player_id: '4',
+      hand: { type: '0', card: ['d14', 'd12', 'h10', 'c3', 'd2'] },
+      total_bet: 100,
+    },
+  ]);
 });
 
 // test('testGenerateCardCombo', ()=>{

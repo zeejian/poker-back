@@ -64,21 +64,45 @@ socket.on('options2', function (player) {
   } //else show 'allIn' button
 });
 
-socket.on('winnerMsg', function(player){
+socket.on('playerOwnWinMsg', function (player) {
   id = player.player_id;
-  console.log('the client receives winnerMsg event, with player id: ' + id);
+  console.log('the client receives playerOwnWinMsg event, with player id: ' + id);
 
-  document.getElementById('shownMsg'+id).hidden = '';
-  document.getElementById('shownMsg'+id).innerHTML = 'Congratulations! YOU WIN!';
+  document.getElementById('shownMsg' + id).hidden = '';
+  document.getElementById('shownMsg' + id).innerHTML =
+    'Congratulations! YOU WIN!';
   //highlight the winning card
+});
 
-})
-
-socket.on('losersMsg', function(player){
+socket.on('playerOwnLoseMsg', function (player) {
   id = player.player_id;
-  console.log('the client receives losersMsg event, with player id: ' + id);
+  console.log('the client receives playerOwnLoseMsg event, with player id: ' + id);
 
-})
+  document.getElementById('shownMsg' + id).hidden = '';
+  document.getElementById('shownMsg' + id).innerHTML =
+    'YOU LOSE!';
+  //highlight the winning card
+});
+
+socket.on('generalWinMsg', function (players) {
+  playerId = players.player.player_id;
+  winnerId = players.winner.player_id;
+  console.log('the client receives generalWinMsg event, with player id: ' + playerId+', winner ID is: '+winnerId);
+
+  document.getElementById('shownMsg' + playerId).hidden = '';
+  document.getElementById('shownMsg' + playerId).innerHTML =
+    'Player with ID \''+winnerId+'\' wins';
+});
+
+socket.on('generalLoseMsg', function (players) {
+  playerId = players.player.player_id;
+  winnerId = players.winner.player_id;
+  console.log('the client receives generalLoseMsg event, with player id: ' + playerId+', winner ID is: '+winnerId);
+
+  document.getElementById('shownMsg' + playerId).hidden = '';
+  document.getElementById('shownMsg' + playerId).innerHTML =
+    'Player with ID \''+winnerId+'\' loses';
+});
 
 const joinSeatButton = document.getElementsByName('seat');
 joinSeatButton.forEach(function (eachButton) {

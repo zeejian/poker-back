@@ -275,7 +275,7 @@ function compareHands(player1, player2) {
     index = 0;
     return getMaxCardPlayer(player1, player2, index);
   } else {
-    return player1;
+    return [player1];
   }
 }
 
@@ -315,6 +315,111 @@ function getWinners(playerList) {
   return winnerArr;
 }
 
+function getRankedPlayers(pList) {
+  pList.sort((a, b) => {
+    if (a.hand.type != b.hand.type) {
+      return b.hand.type - a.hand.type;
+    } else {
+      if (a.hand.card[0].slice(1) != b.hand.card[0].slice(1)) {
+        return b.hand.card[0].slice(1) - a.hand.card[0].slice(1);
+      } else {
+        if (a.hand.card[1].slice(1) != b.hand.card[1].slice(1)) {
+          return b.hand.card[1].slice(1) - a.hand.card[1].slice(1);
+        } else {
+          if (a.hand.card[1].slice(1) != b.hand.card[1].slice(1)) {
+            return b.hand.card[1].slice(1) - a.hand.card[1].slice(1);
+          } else {
+            if (a.hand.card[2].slice(1) != b.hand.card[2].slice(1)) {
+              return b.hand.card[2].slice(1) - a.hand.card[2].slice(1);
+            } else {
+              if (a.hand.card[3].slice(1) != b.hand.card[3].slice(1)) {
+                return b.hand.card[3].slice(1) - a.hand.card[3].slice(1);
+              } else {
+                if (a.hand.card[4].slice(1) != b.hand.card[4].slice(1)) {
+                  return b.hand.card[4].slice(1) - a.hand.card[4].slice(1);
+                } else {
+                  a.hand.hasTie = true;
+                  b.hand.hasTie = true;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+  return pList;
+}
+
+function getPotsAllocation(rankedPlayers) {
+  var currentPot = { potOwner: rankedPlayers, pot: 0 };
+  potArr = [];
+
+  while (currentPot.potOwner.length > 2) {
+    potOwners = [];
+    potSize = 0;
+    pList = sortByTotalBet(rankedPlayers);
+    minBet = pList[0].total_bet;
+
+    for (var ind = 0; ind < rankedPlayers.length; ind++) {
+      if (rankedPlayers[ind].total_bet != 0) {
+        potOwners.push(rankedPlayers[ind]);
+        potSize = potSize + minBet;
+      }
+    }
+    currentPot = { potOwner: potOwners, pot: potSize };
+    potArr.push(currentPot);
+
+    updateTotalBet(rankedPlayers, minBet);
+  }
+  return potArr;
+}
+
+function distributeChips(rankedPlayers) {
+  potsAlloc = getPotsAllocation(rankedPlayers);
+  for (var i = 0; i < potsAlloc.length; i++) {
+    if ('hasTie' in potsAlloc[i].potOwner[0]) {
+      //Tie , split pot scenario
+      counter = 1;
+      potWinners = [];
+      potWinners.push(potsAlloc[i].potOwner[0]);
+      for (var j = 1; j < potsAlloc[i].potOwner.length; j++) {
+        if ('hasTie' in potsAlloc[i].potOwner[1]) {
+          counter++;
+          potWinners.push(potsAlloc[i].potOwner[j]);
+        }
+      }
+      potWinners.forEach((e) => {
+        e.chips = potsAlloc[i].pot / counter;
+      });
+    } else {
+      // pot winner takes all
+      potsAlloc[i].potOwner[0].chips = potsAlloc[i].pot;
+    }
+  }
+  return rankedPlayers;
+}
+function updateTotalBet(rankedPlayers, minBet) {
+  //update total_bet
+  for (var i = 0; i < rankedPlayers.length; i++) {
+    if (rankedPlayers[i].total_bet - minBet >= 0) {
+      rankedPlayers[i].total_bet = rankedPlayers[i].total_bet - minBet;
+    }
+  }
+}
+
+function sortByTotalBet(players) {
+  players.sort((a, b) => {
+    return a.total_bet - b.total_bet;
+  });
+  for (var i = 0; i < players.length; i++) {
+    if (players[i].total_bet != 0) {
+      return players.slice(i);
+    }
+  }
+  return players;
+}
+
 //module.exports = server;
 module.exports = {
   testJs,
@@ -329,4 +434,8 @@ module.exports = {
   generateCardCombo,
   compareHands,
   getWinners,
+  getRankedPlayers,
+  getPotsAllocation,
+  sortByTotalBet,
+  distributeChips,
 };

@@ -5,8 +5,9 @@ const app = express();
 const server = require('http').Server(app);
 const io = require('socket.io')(server);
 const getAnalyzedHand = require('./hand').getAnalyzedHand;
-const compareHands = require('./hand').compareHands;
-const getWinners = require('./hand').getWinners;
+//const compareHands = require('./hand').compareHands;
+//const getWinners = require('./hand').getWinners;
+const getRankedPlayers = require('./hand').getRankedPlayers;
 
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -274,11 +275,8 @@ function dealCommunityCards() {
     communityCards.push(river);
     sendToAllPlayers({ cardType: 'river', card: river });
     gameStage = 'river';
-  } else if (gameStage == 'river') {
-    //check result
-    //set to preFlop, at starGame?
-    //handleShowDown();
-    //gameStage = 'preFlop';
+  } else {
+    alert('unknown game stage.');
   }
 }
 
@@ -297,7 +295,7 @@ function handleShowDown() {
       });
 
       cardset.sort((a, b) => {
-        return a.slice(1) - b.slice(1);
+        return b.slice(1) - a.slice(1);
       });
       console.log(cardset);
       //sort cardset from big to small
@@ -305,23 +303,35 @@ function handleShowDown() {
       playerList[i].hand = playerHand;
     }
   }
-  sortedPlayers = sortHandByCardType(playerList);
-  console.log(sortedPlayers);
-  //sortedPlayers.slice(0, 2);
+  //sortedPlayers = sortHandByCardType(playerList);
+  //winners = getWinners(sortedPlayers);
 
-  //winners = compareHands(sortedPlayers[0], sortedPlayers[1]);
+  //FIX: for every player, check totolBet is highest totalBet, if less than totalBet, which is a all in case,
 
-  winners = getWinners(sortedPlayers);
-  sendToPlayerResult(winners);
+  rankedPlayers = getRankedPlayers(playerList);
+  distributeChips(rankedPlayers);
+  sendToPlayerResult(rankedPlayers);
+
+  //new game
 }
-
-function sendToPlayerResult(oneOrMorePlayer) {
+// for each player including inactive, broadcast player info(win, lose, bankroll info for palyer himself)
+function sendToPlayerResult(activePlayer) {
   socketToPlayerMap.forEach((value, key, map) => {
-    if (value.player_id == oneOrMorePlayer.player_id) {
-      io.to(key).emit('winnerMsg', oneOrMorePlayer);
-    } else {
-      io.to(key).emit('losersMsg', value);
-    }
+    activePlayer.forEach((e) => {
+      if (value.player_id == e.player_id) {
+        if (e.chips > 0) {
+          io.to(key).emit('playerOwnWinMsg', e);
+        } else {
+          io.to(key).emit('playerOwnLoseMsg', e);
+        }
+      } else {
+        if (e.chips > 0) {
+          io.to(key).emit('generalWinMsg', { player: value, winner: e });
+        } else {
+          io.to(key).emit('generalLoseMsg', { player: value, winner: e });
+        }
+      }
+    });
   });
 }
 
