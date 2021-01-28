@@ -348,6 +348,7 @@ function getRankedPlayers(pList) {
       }
     }
   });
+
   return pList;
 }
 
@@ -355,11 +356,14 @@ function getPotsAllocation(rankedPlayers) {
   var currentPot = { potOwner: rankedPlayers, pot: 0 };
   potArr = [];
 
-  while (currentPot.potOwner.length > 2) {
+  while (currentPot.potOwner.length > 1) {
     potOwners = [];
     potSize = 0;
     pList = sortByTotalBet(rankedPlayers);
     minBet = pList[0].total_bet;
+    if(minBet == 0){
+      break;
+    }
 
     for (var ind = 0; ind < rankedPlayers.length; ind++) {
       if (rankedPlayers[ind].total_bet != 0) {
@@ -372,6 +376,7 @@ function getPotsAllocation(rankedPlayers) {
 
     updateTotalBet(rankedPlayers, minBet);
   }
+  console.log(potArr)
   return potArr;
 }
 

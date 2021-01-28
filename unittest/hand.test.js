@@ -439,7 +439,7 @@ test('testGetPotsAllocation', () => {
         {
           player_id: '4',
           hand: { type: '1', card: ['d14', 'd12', 'h10', 'c3', 'd2'] },
-          total_bet: 100,
+          total_bet: 0,
         },
       ],
       pot: 200,
@@ -459,7 +459,7 @@ test('testGetPotsAllocation', () => {
         {
           player_id: '4',
           hand: { type: '1', card: ['d14', 'd12', 'h10', 'c3', 'd2'] },
-          total_bet: 100,
+          total_bet: 0,
         },
       ],
       pot: 150,
@@ -474,10 +474,51 @@ test('testGetPotsAllocation', () => {
         {
           player_id: '4',
           hand: { type: '1', card: ['d14', 'd12', 'h10', 'c3', 'd2'] },
-          total_bet: 100,
+          total_bet: 0,
         },
       ],
       pot: 200,
+    },
+    {
+      potOwner: [
+        {
+          player_id: '4',
+          hand: { type: '1', card: ['d14', 'd12', 'h10', 'c3', 'd2'] },
+          total_bet: 0,
+        },
+      ],
+      pot: 100,
+    },
+  ]);
+
+  expect(
+    hand.getPotsAllocation([
+      {
+        player_id: '1',
+        hand: { type: '1', card: ['h13', 'h12', 's10', 'h3', 'h2'] },
+        total_bet: 20,
+      },
+      {
+        player_id: '2',
+        hand: { type: '0', card: ['c13', 'c12', 'c10', 's4', 's2'] },
+        total_bet: 20,
+      },
+    ])
+  ).toEqual([
+    {
+      potOwner: [
+        {
+          player_id: '1',
+          hand: { type: '1', card: ['h13', 'h12', 's10', 'h3', 'h2'] },
+          total_bet: 0,
+        },
+        {
+          player_id: '2',
+          hand: { type: '0', card: ['c13', 'c12', 'c10', 's4', 's2'] },
+          total_bet: 0,
+        },
+      ],
+      pot: 40,
     },
   ]);
 });
@@ -528,7 +569,8 @@ test('testDistributeChips', () => {
     {
       player_id: '4',
       hand: { type: '0', card: ['d14', 'd12', 'h10', 'c3', 'd2'] },
-      total_bet: 100,
+      total_bet: 0,
+      chips:100
     },
   ]);
 });

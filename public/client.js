@@ -68,8 +68,8 @@ socket.on('playerOwnWinMsg', function (player) {
   id = player.player_id;
   console.log('the client receives playerOwnWinMsg event, with player id: ' + id);
 
-  document.getElementById('shownMsg' + id).hidden = '';
-  document.getElementById('shownMsg' + id).innerHTML =
+  document.getElementById('ownMsg' + id).hidden = '';
+  document.getElementById('ownMsg' + id).innerHTML =
     'Congratulations! YOU WIN!';
   //highlight the winning card
 });
@@ -78,8 +78,8 @@ socket.on('playerOwnLoseMsg', function (player) {
   id = player.player_id;
   console.log('the client receives playerOwnLoseMsg event, with player id: ' + id);
 
-  document.getElementById('shownMsg' + id).hidden = '';
-  document.getElementById('shownMsg' + id).innerHTML =
+  document.getElementById('ownMsg' + id).hidden = '';
+  document.getElementById('ownMsg' + id).innerHTML =
     'YOU LOSE!';
   //highlight the winning card
 });
@@ -89,18 +89,18 @@ socket.on('generalWinMsg', function (players) {
   winnerId = players.winner.player_id;
   console.log('the client receives generalWinMsg event, with player id: ' + playerId+', winner ID is: '+winnerId);
 
-  document.getElementById('shownMsg' + playerId).hidden = '';
-  document.getElementById('shownMsg' + playerId).innerHTML =
+  document.getElementById('generalMsg' + playerId).hidden = '';
+  document.getElementById('generalMsg' + playerId).innerHTML =
     'Player with ID \''+winnerId+'\' wins';
 });
 
 socket.on('generalLoseMsg', function (players) {
   playerId = players.player.player_id;
   winnerId = players.winner.player_id;
-  console.log('the client receives generalLoseMsg event, with player id: ' + playerId+', winner ID is: '+winnerId);
+  console.log('the client receives generalLoseMsg event, with player id: ' + playerId+', loser ID is: '+winnerId);
 
-  document.getElementById('shownMsg' + playerId).hidden = '';
-  document.getElementById('shownMsg' + playerId).innerHTML =
+  document.getElementById('generalMsg' + playerId).hidden = '';
+  document.getElementById('generalMsg' + playerId).innerHTML =
     'Player with ID \''+winnerId+'\' loses';
 });
 

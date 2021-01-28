@@ -8,6 +8,7 @@ const getAnalyzedHand = require('./hand').getAnalyzedHand;
 //const compareHands = require('./hand').compareHands;
 //const getWinners = require('./hand').getWinners;
 const getRankedPlayers = require('./hand').getRankedPlayers;
+const distributeChips = require('./hand').distributeChips;
 
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -284,6 +285,7 @@ function handleShowDown() {
   //loop through active players:
   //analyze hands of each player, best 5 cards of carda, cardb, plus community cards
   //compare hands
+  activePlayers = [];
   for (var i = 0; i < playerList.length; i++) {
     if (playerList[i].status == 'active') {
       //check flush
@@ -301,6 +303,7 @@ function handleShowDown() {
       //sort cardset from big to small
       playerHand = getAnalyzedHand(cardset);
       playerList[i].hand = playerHand;
+      activePlayers.push(playerList[i]);
     }
   }
   //sortedPlayers = sortHandByCardType(playerList);
@@ -308,8 +311,9 @@ function handleShowDown() {
 
   //FIX: for every player, check totolBet is highest totalBet, if less than totalBet, which is a all in case,
 
-  rankedPlayers = getRankedPlayers(playerList);
-  distributeChips(rankedPlayers);
+  rankedPlayers = getRankedPlayers(activePlayers);
+  rankedPlayers = distributeChips(rankedPlayers);
+  console.log(rankedPlayers);
   sendToPlayerResult(rankedPlayers);
 
   //new game
