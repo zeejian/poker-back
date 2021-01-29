@@ -24,6 +24,9 @@ var small;
 var big;
 var pot = 0;
 var highestBet = 0;
+var flop = [];
+var turn = '';
+var river = '';
 var gameStage; //enum: preFlop, flop, turn, river
 
 app.get('/', (request, response) => {
@@ -62,6 +65,7 @@ server.listen(process.env.PORT || 3000, () =>
 // });
 
 io.on('connection', function (socket) {
+  //console.log('new player opens a browser window');
   socket.on('joinGameEvent', function (data) {
     console.log('A client sent us this dumb message:', data.player_id);
 
@@ -78,6 +82,15 @@ io.on('connection', function (socket) {
     );
     playerList.push(onePlayer);
     socketToPlayerMap.set(socket.id, onePlayer);
+    if (flop.length == 3) {
+      io.to(socket.id).emit('layFlopCards', flop);
+    }
+    if (turn != '') {
+      io.to(socket.id).emit('layTurnCard', turn);
+    }
+    if (river != '') {
+      io.to(socket.id).emit('layRiverCard', river);
+    }
 
     //wait for 1 second, if gameNotOn(if playerList>1, start game, otherwise only wait for other players), else do nothing.
     if (!isGameOn) {
@@ -106,7 +119,8 @@ io.on('connection', function (socket) {
       //congrats winnner,
 
       //winner takes the pot,
-
+      next = getNextPlayer(data);
+      
       //wait for seconds to start new round
 
       console.log('this round ended.');
@@ -246,6 +260,29 @@ io.on('connection', function (socket) {
       sendToPlayer(socketToPlayerMap, next);
     }
   });
+
+  socket.on('playerActionAllIn', function (data) {
+    console.log(
+      'received the user action allIn event, player id :' +
+        data.player_id +
+        ', allIn bet amount:' +
+        data.bet
+    );
+
+    player = getIdPlayer(parseInt(data.player_id));
+    updatePlayerBet(data.player_id, parseInt(data.bet));
+
+    next = getNextPlayer(getIdPlayer(player.player_id));
+    if (next.subtotal_bet != 0) {
+      // the next player already raised, it should be the previous player as well
+      while (gameStage != 'river') {
+        dealCommunityCards();
+      }
+      handleShowDown();
+    } else {
+      sendToPlayer(socketToPlayerMap, next);
+    }
+  });
 });
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -312,13 +349,14 @@ function handleShowDown() {
   //FIX: for every player, check totolBet is highest totalBet, if less than totalBet, which is a all in case,
 
   rankedPlayers = getRankedPlayers(activePlayers);
-  rankedPlayers = distributeChips(rankedPlayers);
+  distributeChips(rankedPlayers);
   console.log(rankedPlayers);
   sendToPlayerResult(rankedPlayers);
 
   //new game
 }
 // for each player including inactive, broadcast player info(win, lose, bankroll info for palyer himself)
+//FIX: send active player list to every player using one event?{players: activePlayers, client: player}
 function sendToPlayerResult(activePlayer) {
   socketToPlayerMap.forEach((value, key, map) => {
     activePlayer.forEach((e) => {
@@ -330,8 +368,10 @@ function sendToPlayerResult(activePlayer) {
         }
       } else {
         if (e.chips > 0) {
+          //io.to(key).emit('generalWinMsg', e ); should be enough just send the activePlayer e
           io.to(key).emit('generalWinMsg', { player: value, winner: e });
         } else {
+          //io.to(key).emit('generalWinMsg', e );
           io.to(key).emit('generalLoseMsg', { player: value, winner: e });
         }
       }
@@ -368,11 +408,14 @@ function sendToPlayer(socket_player, aPlayer) {
         aPlayer.minToCall = highestBet - aPlayer.subtotal_bet;
       } else {
         aPlayer.minToCall = aPlayer.bankroll;
-        //io.to(key).emit('options3', aPlayer); //options3 : fold, all in
       }
 
       if (aPlayer.subtotal_bet != highestBet) {
-        io.to(key).emit('options1', aPlayer); //options1 : fold, raise, call
+        if (aPlayer.minToCall == aPlayer.bankroll) {
+          io.to(key).emit('options3', aPlayer); //options3 : fold, all in
+        } else {
+          io.to(key).emit('options1', aPlayer); //options1 : fold, raise, call
+        }
       } else {
         io.to(key).emit('options2', aPlayer); //options2 : fold, raise, check
       }
@@ -483,9 +526,15 @@ function startGame(socket, io) {
     for (var i = 0; i < playerList.length; i++) {
       playerList[i].status = 'active';
       playerList[i].subtotal_bet = 0;
+      playerList[i].total_bet = 0;
+      //reset totalBet to 0?
     }
     isGameOn = true; //after this, the new joined players will be in inactive
     gameStage = 'preFlop';
+    flop = [];
+    turn = '';
+    river = '';
+
     button = getButtonPlayer(); // possible to change to async function
     console.log('button player id is: ' + button.player_id);
     dealHoleCards();

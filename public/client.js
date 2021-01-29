@@ -64,9 +64,19 @@ socket.on('options2', function (player) {
   } //else show 'allIn' button
 });
 
+socket.on('options3', function (player) {
+  id = player.player_id;
+  console.log('the client receives player id: ' + id);
+  document.getElementById('fold' + id).hidden = '';
+  document.getElementById('allIn' + id).hidden = '';
+  document.getElementById('allIn' + id).value = player.minToCall;
+});
+
 socket.on('playerOwnWinMsg', function (player) {
   id = player.player_id;
-  console.log('the client receives playerOwnWinMsg event, with player id: ' + id);
+  console.log(
+    'the client receives playerOwnWinMsg event, with player id: ' + id
+  );
 
   document.getElementById('ownMsg' + id).hidden = '';
   document.getElementById('ownMsg' + id).innerHTML =
@@ -76,32 +86,43 @@ socket.on('playerOwnWinMsg', function (player) {
 
 socket.on('playerOwnLoseMsg', function (player) {
   id = player.player_id;
-  console.log('the client receives playerOwnLoseMsg event, with player id: ' + id);
+  console.log(
+    'the client receives playerOwnLoseMsg event, with player id: ' + id
+  );
 
   document.getElementById('ownMsg' + id).hidden = '';
-  document.getElementById('ownMsg' + id).innerHTML =
-    'YOU LOSE!';
+  document.getElementById('ownMsg' + id).innerHTML = 'YOU LOSE!';
   //highlight the winning card
 });
 
 socket.on('generalWinMsg', function (players) {
   playerId = players.player.player_id;
   winnerId = players.winner.player_id;
-  console.log('the client receives generalWinMsg event, with player id: ' + playerId+', winner ID is: '+winnerId);
+  console.log(
+    'the client receives generalWinMsg event, with player id: ' +
+      playerId +
+      ', winner ID is: ' +
+      winnerId
+  );
 
-  document.getElementById('generalMsg' + playerId).hidden = '';
-  document.getElementById('generalMsg' + playerId).innerHTML =
-    'Player with ID \''+winnerId+'\' wins';
+  document.getElementById('ownMsg' + winnerId).hidden = '';
+  document.getElementById('ownMsg' + winnerId).innerHTML =
+    "Player with ID '" + winnerId + "' wins";
 });
 
 socket.on('generalLoseMsg', function (players) {
   playerId = players.player.player_id;
   winnerId = players.winner.player_id;
-  console.log('the client receives generalLoseMsg event, with player id: ' + playerId+', loser ID is: '+winnerId);
+  console.log(
+    'the client receives generalLoseMsg event, with player id: ' +
+      playerId +
+      ', loser ID is: ' +
+      winnerId
+  );
 
-  document.getElementById('generalMsg' + playerId).hidden = '';
-  document.getElementById('generalMsg' + playerId).innerHTML =
-    'Player with ID \''+winnerId+'\' loses';
+  document.getElementById('ownMsg' + winnerId).hidden = '';
+  document.getElementById('ownMsg' + winnerId).innerHTML =
+    "Player with ID '" + winnerId + "' loses";
 });
 
 const joinSeatButton = document.getElementsByName('seat');
@@ -155,6 +176,9 @@ playerActionFoldButton.forEach(function (eachButton) {
     document.getElementById('check' + eachButton.value).hidden = 'hidden';
     document.getElementById('raise' + eachButton.value).hidden = 'hidden';
     document.getElementById('call' + eachButton.value).hidden = 'hidden';
+    document.getElementById(
+      'allIn' + eachButton.getAttribute('id').slice(-1)
+    ).hidden = 'hidden';
 
     //var socket = io.connect('/');
     socket.emit('playerActionFold', { player_id: eachButton.value });
@@ -173,6 +197,9 @@ playerActionCallButton.forEach(function (eachButton) {
     document.getElementById('check' + eachButton.value).hidden = 'hidden';
     document.getElementById('raise' + eachButton.value).hidden = 'hidden';
     document.getElementById('call' + eachButton.value).hidden = 'hidden';
+    document.getElementById(
+      'allIn' + eachButton.getAttribute('id').slice(-1)
+    ).hidden = 'hidden';
 
     //var socket = io.connect('/');
     socket.emit('playerActionCall', { player_id: eachButton.value });
@@ -186,6 +213,34 @@ playerActionCallButton.forEach(function (eachButton) {
   });
 });
 
+const playerActionAllInButton = document.getElementsByName('allIn');
+playerActionAllInButton.forEach(function (eachButton) {
+  eachButton.addEventListener('click', function (e) {
+    console.log('allIn button was clicked');
+
+    document.getElementById('fold' + eachButton.getAttribute('id').slice(-1)).hidden = 'hidden';
+    document.getElementById('check' + eachButton.getAttribute('id').slice(-1)).hidden = 'hidden';
+    document.getElementById('raise' + eachButton.getAttribute('id').slice(-1)).hidden = 'hidden';
+    document.getElementById('call' + eachButton.getAttribute('id').slice(-1)).hidden = 'hidden';
+    document.getElementById(
+      'allIn' + eachButton.getAttribute('id').slice(-1)
+    ).hidden = 'hidden';
+
+    //var socket = io.connect('/');
+    socket.emit('playerActionAllIn', {
+      player_id: eachButton.getAttribute('id').slice(-1),
+      bet: eachButton.value,
+    });
+    // socket.on('allInMsg', function (id) {
+    //   console.log('the client receives player id: ' + id + ' just allIn.');
+    //   document.getElementById('fold' + id).hidden = '';
+    //   document.getElementById('check' + id).hidden = '';
+    //   document.getElementById('raise' + id).hidden = '';
+    //   document.getElementById('call' + id).hidden = '';
+    // });
+  });
+});
+
 const playerActionCheckButton = document.getElementsByName('check');
 playerActionCheckButton.forEach(function (eachButton) {
   eachButton.addEventListener('click', function (e) {
@@ -195,6 +250,9 @@ playerActionCheckButton.forEach(function (eachButton) {
     document.getElementById('check' + eachButton.value).hidden = 'hidden';
     document.getElementById('raise' + eachButton.value).hidden = 'hidden';
     document.getElementById('call' + eachButton.value).hidden = 'hidden';
+    document.getElementById(
+      'allIn' + eachButton.getAttribute('id').slice(-1)
+    ).hidden = 'hidden';
 
     //var socket = io.connect('/');
     socket.emit('playerActionCheck', { player_id: eachButton.value });
@@ -216,6 +274,9 @@ playerActionRaiseButton.forEach(function (eachButton) {
     document.getElementById('check' + eachButton.value).hidden = 'hidden';
     document.getElementById('raise' + eachButton.value).hidden = 'hidden';
     document.getElementById('call' + eachButton.value).hidden = 'hidden';
+    document.getElementById(
+      'allIn' + eachButton.getAttribute('id').slice(-1)
+    ).hidden = 'hidden';
     document.getElementById('raiseSlider' + eachButton.value).style.display =
       '';
   });
