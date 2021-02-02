@@ -9,6 +9,7 @@ const getAnalyzedHand = require('./hand').getAnalyzedHand;
 //const getWinners = require('./hand').getWinners;
 const getRankedPlayers = require('./hand').getRankedPlayers;
 const distributeChips = require('./hand').distributeChips;
+const rebalanceBankroll = require('./hand').rebalanceBankroll;
 
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -105,8 +106,9 @@ io.on('connection', function (socket) {
     // if playerList length is less 3, start over; otherwise deregister the player(reset status)
 
     console.log('player with id: ' + data.player_id + ' folded.');
-    updatePlayerStatus(parseInt(data.player_id), 'inactive');
-    updatePlayerSubtotalBet(parseInt(data.player_id), 0);
+    updatePlayerStatus(parseInt(data.player_id), 'folded'); // instroduce new state 'folded'
+
+    //updatePlayerSubtotalBet(parseInt(data.player_id), 0);
     nrOfactivePlayers = getStatusPlayers('active').length;
     console.log('nubmer of active player is : ' + nrOfactivePlayers);
 
@@ -120,7 +122,9 @@ io.on('connection', function (socket) {
 
       //winner takes the pot,
       next = getNextPlayer(data);
-      
+      next.bankroll += next.total_bet;
+      collectChips(next, getStatusPlayers('folded'));
+
       //wait for seconds to start new round
 
       console.log('this round ended.');
@@ -286,6 +290,17 @@ io.on('connection', function (socket) {
 });
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
+function collectChips(winner, fPlayers) {
+  deadBet = 0;
+  fPlayers.forEach((e) => {
+    deadBet += e.total_bet;
+  });
+  winner.bankroll += deadBet;
+}
+
+function addPlayerBetToPot(player) {
+  pot += player.total_bet;
+}
 function dealCommunityCards() {
   if (gameStage == 'preFlop') {
     //send to all players 3 cards
@@ -347,12 +362,15 @@ function handleShowDown() {
   //winners = getWinners(sortedPlayers);
 
   //FIX: for every player, check totolBet is highest totalBet, if less than totalBet, which is a all in case,
-
+  foldedPlayers = getStatusPlayers('folded');
   rankedPlayers = getRankedPlayers(activePlayers);
-  distributeChips(rankedPlayers);
-  console.log(rankedPlayers);
+  distributeChips(rankedPlayers, foldedPlayers);
   sendToPlayerResult(rankedPlayers);
+  sendToPlayerResult(foldedPlayers);
+  rebalanceBankroll(rankedPlayers);
 
+  console.log(rankedPlayers);
+  console.log(foldedPlayers);
   //new game
 }
 // for each player including inactive, broadcast player info(win, lose, bankroll info for palyer himself)
@@ -534,6 +552,7 @@ function startGame(socket, io) {
     flop = [];
     turn = '';
     river = '';
+    communityCards = []
 
     button = getButtonPlayer(); // possible to change to async function
     console.log('button player id is: ' + button.player_id);
@@ -601,13 +620,13 @@ function getButtonPlayer() {
 function getNextPlayer(player) {
   for (var i = player.player_id; i < playerList.length; i++) {
     //console.log('player id: '  +playerList[i].player_id);
-    if (playerList[i].status != 'inactive') {
+    if (playerList[i].status == 'active') {
       return playerList[i];
     }
   }
   for (var i = 0; i < player.player_id - 1; i++) {
     //console.log('player id: '  +playerList[i].player_id);
-    if (playerList[i].status != 'inactive') {
+    if (playerList[i].status == 'active') {
       return playerList[i];
     }
   }

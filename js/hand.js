@@ -361,7 +361,7 @@ function getPotsAllocation(rankedPlayers) {
     potSize = 0;
     pList = sortByTotalBet(rankedPlayers);
     minBet = pList[0].total_bet;
-    if(minBet == 0){
+    if (minBet == 0) {
       break;
     }
 
@@ -376,12 +376,13 @@ function getPotsAllocation(rankedPlayers) {
 
     updateTotalBet(rankedPlayers, minBet);
   }
-  console.log(potArr)
+  console.log(potArr);
   return potArr;
 }
 
-function distributeChips(rankedPlayers) {
+function distributeChips(rankedPlayers, foldedPlayers) {
   potsAlloc = getPotsAllocation(rankedPlayers);
+  updateAllocatedPots(potsAlloc, foldedPlayers);
   for (var i = 0; i < potsAlloc.length; i++) {
     if ('hasTie' in potsAlloc[i].potOwner[0]) {
       //Tie , split pot scenario
@@ -403,6 +404,33 @@ function distributeChips(rankedPlayers) {
     }
   }
   return rankedPlayers;
+}
+
+function updateAllocatedPots(allocPots, fPlayers) {
+  for (var i = 0; i < allocPots.length; i++) {
+    potUnit = allocPots[i].pot / allocPots[i].potOwner.length;
+    for (var j = 0; j < fPlayers.length; j++) {
+      if (fPlayers[j].total_bet != 0) {
+        if (fPlayers[j].total_bet <= potUnit) {
+          allocPots[i].pot += fPlayers[j].total_bet;
+          fPlayers[j].total_bet = 0;
+        } else {
+          allocPots[i].pot += potUnit;
+          fPlayers[j].total_bet -= potUnit;
+        }
+      }
+    }
+  }
+  return allocPots;
+}
+
+function rebalanceBankroll(rPlayers) {
+  for (var i = 0; i < rPlayers.length; i++) {
+    if ('chips' in rPlayers[i]) {
+      rPlayers[i].bankroll += rPlayers[i].chips; // if has chips prop
+      rPlayers[i].chips = 0;
+    }
+  }
 }
 function updateTotalBet(rankedPlayers, minBet) {
   //update total_bet
@@ -443,4 +471,6 @@ module.exports = {
   getPotsAllocation,
   sortByTotalBet,
   distributeChips,
+  updateAllocatedPots,
+  rebalanceBankroll,
 };

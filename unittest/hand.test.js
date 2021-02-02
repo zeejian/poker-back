@@ -525,52 +525,66 @@ test('testGetPotsAllocation', () => {
 
 test('testDistributeChips', () => {
   expect(
-    hand.distributeChips([
-      {
-        player_id: '1',
-        hand: { type: '0', card: ['h13', 'h12', 's10', 'h3', 'h2'] },
-        total_bet: 50,
-      },
-      {
-        player_id: '2',
-        hand: { type: '0', card: ['c13', 'c12', 'c10', 's4', 's2'] },
-        total_bet: 100,
-      },
-      {
-        player_id: '3',
-        hand: { type: '0', card: ['d14', 'd12', 'h10', 'c3', 'd2'] },
-        total_bet: 200,
-      },
-      {
-        player_id: '4',
-        hand: { type: '0', card: ['d14', 'd12', 'h10', 'c3', 'd2'] },
-        total_bet: 300,
-      },
-    ])
+    hand.distributeChips(
+      [
+        {
+          player_id: '1',
+          hand: { type: '0', card: ['h13', 'h12', 's10', 'h3', 'h2'] },
+          total_bet: 50,
+        },
+        {
+          player_id: '2',
+          hand: { type: '0', card: ['c13', 'c12', 'c10', 's4', 's2'] },
+          total_bet: 100,
+        },
+        {
+          player_id: '3',
+          hand: { type: '0', card: ['d14', 'd12', 'h10', 'c3', 'd2'] },
+          total_bet: 200,
+        },
+        {
+          player_id: '4',
+          hand: { type: '0', card: ['d14', 'd12', 'h10', 'c3', 'd2'] },
+          total_bet: 300,
+        },
+      ],
+      [
+        {
+          player_id: '5',
+          hand: { type: '0', card: ['h13', 'h12', 's10', 'h3', 'h2'] },
+          total_bet: 80,
+        },
+        {
+          player_id: '6',
+          hand: { type: '0', card: ['c13', 'c12', 'c10', 's4', 's2'] },
+          total_bet: 120,
+        },
+      ]
+    )
   ).toEqual([
     {
       player_id: '1',
       hand: { type: '0', card: ['h13', 'h12', 's10', 'h3', 'h2'] },
       total_bet: 0,
-      chips: 200,
+      chips: 300,
     },
     {
       player_id: '2',
       hand: { type: '0', card: ['c13', 'c12', 'c10', 's4', 's2'] },
       total_bet: 0,
-      chips: 150,
+      chips: 230,
     },
     {
       player_id: '3',
       hand: { type: '0', card: ['d14', 'd12', 'h10', 'c3', 'd2'] },
       total_bet: 0,
-      chips: 200,
+      chips: 220,
     },
     {
       player_id: '4',
       hand: { type: '0', card: ['d14', 'd12', 'h10', 'c3', 'd2'] },
       total_bet: 0,
-      chips:100
+      chips: 100,
     },
   ]);
 });
