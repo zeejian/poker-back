@@ -4,6 +4,16 @@ console.log('Client-side code running');
 /////   Send request using 'socket.io'    ///////////
 //////////////////////////////////////////////////////
 var socket = io.connect('/');
+
+// window.onbeforeunload = function(e) {
+//   socket.emit('disconnect', 'test');
+// };
+
+socket.on('playerLeftGame', function (player) {
+  console.log('player: ' + player.player_id+' has left the game');
+  //update 'player' DOM state
+});
+
 socket.on('layFlopCards', function (cards) {
   console.log('flop cards are: ' + cards);
   for (var i = 0; i < cards.length; i++) {

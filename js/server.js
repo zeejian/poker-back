@@ -24,6 +24,7 @@ var button;
 var small;
 var big;
 var pot = 0;
+var deadBet = 0;
 var highestBet = 0;
 var flop = [];
 var turn = '';
@@ -66,6 +67,35 @@ server.listen(process.env.PORT || 3000, () =>
 // });
 
 io.on('connection', function (socket) {
+  socket.on('disconnect', function (player) {
+    console.log('A client close the window:', socket.id);
+
+    if (socketToPlayerMap.has(socket.id)) {
+      player = socketToPlayerMap.get(socket.id);
+      //if playerList length is 2, deregister the player, restart the game
+      deadBet += player.total_bet;
+      if (playerList.length <= 2) {
+        deRegisterPlayer(player, socket);
+        isGameOn = false;
+        gameStage = 'preFlop';
+        flop = [];
+        turn = '';
+        river = '';
+        communityCards = [];
+        deadBet = 0;
+        //clearBoard()
+      } else {
+        if (player.hasToken) {
+          next = getNextPlayer(player);
+          sendToPlayer(socketToPlayerMap, next);
+        }
+        deRegisterPlayer(player, socket);
+      }
+    }
+    console.log(playerList);
+    console.log(socketToPlayerMap);
+  });
+
   //console.log('new player opens a browser window');
   socket.on('joinGameEvent', function (data) {
     console.log('A client sent us this dumb message:', data.player_id);
@@ -118,15 +148,12 @@ io.on('connection', function (socket) {
     //fold the card as well?
 
     if (nrOfactivePlayers < 2) {
-      //congrats winnner,
-
-      //winner takes the pot,
+      //winner takes the pot
       next = getNextPlayer(data);
       next.bankroll += next.total_bet;
       collectChips(next, getStatusPlayers('folded'));
 
       //wait for seconds to start new round
-
       console.log('this round ended.');
       isGameOn = false;
       if (!isGameOn) {
@@ -154,24 +181,31 @@ io.on('connection', function (socket) {
       //if the next players bet equals to highestBet,
       //we do not want to give the option 'call'?
       //if the next players bet is less than the highestBet, we dont give option 'check'?
-      if (next.subtotal_bet == highestBet && next.player_id != big.player_id) {
-        console.log('this is where we start dealing the next card(s)');
-        if (gameStage != 'river') {
-          dealCommunityCards();
-          //reset highestBet and subtotal_bet to 0?
-          for (var i = 0; i < playerList.length; i++) {
-            if (playerList[i].status == 'active') {
-              playerList[i].subtotal_bet = 0;
+      if (next.subtotal_bet == highestBet) {
+        if (
+          (next.player_id == big.player_id && next.total_bet != 20) ||
+          next.player_id != big.player_id
+        ) {
+          console.log('this is where we start dealing the next card(s)');
+          if (gameStage != 'river') {
+            dealCommunityCards();
+            //reset highestBet and subtotal_bet to 0?
+            for (var i = 0; i < playerList.length; i++) {
+              if (playerList[i].status == 'active') {
+                playerList[i].subtotal_bet = 0;
+              }
             }
-          }
-          highestBet = 0;
+            highestBet = 0;
 
-          //send options to the next player of button
-          button = getRolePlayers('button')[0];
-          sendToPlayer(socketToPlayerMap, getNextPlayer(button));
+            //send options to the next player of button
+            button = getRolePlayers('button')[0];
+            sendToPlayer(socketToPlayerMap, getNextPlayer(button));
+          } else {
+            handleShowDown();
+            gameStage = 'preFlop';
+          }
         } else {
-          handleShowDown();
-          gameStage = 'preFlop';
+          sendToPlayer(socketToPlayerMap, next);
         }
       } else {
         sendToPlayer(socketToPlayerMap, next);
@@ -290,8 +324,17 @@ io.on('connection', function (socket) {
 });
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
+function deRegisterPlayer(player, socket) {
+  const index = playerList.indexOf(player);
+  if (index > -1) {
+    playerList.splice(index, 1);
+  }
+  socketToPlayerMap.delete(socket.id);
+  socket.broadcast.emit('playerLeftGame', player);
+}
+
 function collectChips(winner, fPlayers) {
-  deadBet = 0;
+  //deadBet = 0;
   fPlayers.forEach((e) => {
     deadBet += e.total_bet;
   });
@@ -552,7 +595,8 @@ function startGame(socket, io) {
     flop = [];
     turn = '';
     river = '';
-    communityCards = []
+    communityCards = [];
+    deadBet = 0;
 
     button = getButtonPlayer(); // possible to change to async function
     console.log('button player id is: ' + button.player_id);
