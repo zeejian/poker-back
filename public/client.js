@@ -10,8 +10,61 @@ var socket = io.connect('/');
 // };
 
 socket.on('playerLeftGame', function (player) {
-  console.log('player: ' + player.player_id+' has left the game');
+  console.log('player: ' + player.player_id + ' has left the game.');
   //update 'player' DOM state
+});
+
+socket.on('playerSeated', function (player) {
+  console.log('player: ' + player.player_id + ' has joined.');
+  //update 'player' DOM state
+  const seatButton = document.getElementsByName('seat');
+  seatButton.forEach(function (eachButton) {
+    if (eachButton.value == player.player_id) {
+      eachButton.src = 'images/user.png.png';
+      eachButton.disabled = true;
+    }
+  });
+});
+
+socket.on('all', function (player) {
+  console.log('received broadcasted msg:' + player.player_id);
+});
+
+socket.on('updateMainPlayer', function (player) {
+  console.log('update player own info');
+  document.getElementById('account' + player.player_id).style.display = '';
+  document.getElementById('accountBalance' + player.player_id).innerHTML =
+    player.bankroll;
+});
+
+socket.on('updateOtherPlayers', function (player) {
+  console.log('update other player  info');
+  document.getElementById('info' + player.player_id).hidden = '';
+  document.getElementById('bankroll' + player.player_id).innerHTML =
+    player.bankroll;
+});
+
+socket.on('updatePlayerInfo', function (player) {
+  console.log('player id is ' + player.player_id);
+  console.log('bankroll is ' + player.bankroll);
+  if (
+    document.getElementById('account' + player.player_id).style.display == ''
+  ) {
+    document.getElementById('accountBalance' + player.player_id).innerHTML =
+      player.bankroll;
+  }
+  if (document.getElementById('info' + player.player_id).hidden == '') {
+    document.getElementById('bankroll' + player.player_id).innerHTML =
+      player.bankroll;
+  }
+})
+socket.on('updateButton', function (player) {
+  if (player.role == 'button') {
+    const button = document.getElementById('button' + player.player_id);
+    button.style.display = '';
+  } else {
+    document.getElementById('button' + player.player_id).style.display = 'none';
+  }
 });
 
 socket.on('layFlopCards', function (cards) {
@@ -21,8 +74,8 @@ socket.on('layFlopCards', function (cards) {
     document.getElementById('imgFlopCard' + i).src = internal_GetCardImageUrl(
       cards[i]
     );
-    document.getElementById('imgFlopCard' + i).width = 100;
-    document.getElementById('imgFlopCard' + i).height = 140;
+    document.getElementById('imgFlopCard' + i).width = 50;
+    document.getElementById('imgFlopCard' + i).height = 65;
   }
 });
 
@@ -30,16 +83,16 @@ socket.on('layTurnCard', function (cards) {
   console.log('turn card is: ' + cards);
   document.getElementById('imgTurnCard').hidden = '';
   document.getElementById('imgTurnCard').src = internal_GetCardImageUrl(cards);
-  document.getElementById('imgTurnCard').width = 100;
-  document.getElementById('imgTurnCard').height = 140;
+  document.getElementById('imgTurnCard').width = 50;
+  document.getElementById('imgTurnCard').height = 65;
 });
 
 socket.on('layRiverCard', function (cards) {
   console.log('river card is: ' + cards);
   document.getElementById('imgRiverCard').hidden = '';
   document.getElementById('imgRiverCard').src = internal_GetCardImageUrl(cards);
-  document.getElementById('imgRiverCard').width = 100;
-  document.getElementById('imgRiverCard').height = 140;
+  document.getElementById('imgRiverCard').width = 50;
+  document.getElementById('imgRiverCard').height = 65;
 });
 
 socket.on('options1', function (player) {
@@ -135,47 +188,47 @@ socket.on('generalLoseMsg', function (players) {
     "Player with ID '" + winnerId + "' loses";
 });
 
-const joinSeatButton = document.getElementsByName('seat');
-joinSeatButton.forEach(function (eachButton) {
-  eachButton.addEventListener('click', function (e) {
-    console.log('button was clicked');
+// const joinSeatButton = document.getElementsByName('seat');
+// joinSeatButton.forEach(function (eachButton) {
+//   eachButton.addEventListener('click', function (e) {
+//     console.log('button was clicked');
 
-    socket.emit('joinGameEvent', { player_id: eachButton.value });
-    socket.on('faceDownCards', function (player) {
-      console.log('the client receives player list: ' + player);
-      console.log('the client receives player carda: ' + player.carda);
-      document.getElementById(
-        'img' + player.player_id + 'a'
-      ).src = internal_GetCardImageUrl(player.carda);
-      document.getElementById('img' + player.player_id + 'a').width = 100;
-      document.getElementById('img' + player.player_id + 'a').height = 140;
-      document.getElementById(
-        'img' + player.player_id + 'b'
-      ).src = internal_GetCardImageUrl(player.cardb);
-      document.getElementById('img' + player.player_id + 'b').width = 100;
-      document.getElementById('img' + player.player_id + 'b').height = 140;
-      document.getElementById('imgFlopCard0').hidden = 'hidden';
-      document.getElementById('imgFlopCard1').hidden = 'hidden';
-      document.getElementById('imgFlopCard2').hidden = 'hidden';
-      document.getElementById('imgTurnCard').hidden = 'hidden';
-      document.getElementById('imgRiverCard').hidden = 'hidden';
-    });
+//     socket.emit('joinGameEvent', { player_id: eachButton.value });
+//     socket.on('faceDownCards', function (player) {
+//       console.log('the client receives player list: ' + player);
+//       console.log('the client receives player carda: ' + player.carda);
+//       document.getElementById(
+//         'img' + player.player_id + 'a'
+//       ).src = internal_GetCardImageUrl(player.carda);
+//       document.getElementById('img' + player.player_id + 'a').width = 100;
+//       document.getElementById('img' + player.player_id + 'a').height = 140;
+//       document.getElementById(
+//         'img' + player.player_id + 'b'
+//       ).src = internal_GetCardImageUrl(player.cardb);
+//       document.getElementById('img' + player.player_id + 'b').width = 100;
+//       document.getElementById('img' + player.player_id + 'b').height = 140;
+//       document.getElementById('imgFlopCard0').hidden = 'hidden';
+//       document.getElementById('imgFlopCard1').hidden = 'hidden';
+//       document.getElementById('imgFlopCard2').hidden = 'hidden';
+//       document.getElementById('imgTurnCard').hidden = 'hidden';
+//       document.getElementById('imgRiverCard').hidden = 'hidden';
+//     });
 
-    // socket.on('layCards', function (cards) {
-    //   console.log('community cards are: '+ cards);
-    // })
-    socket.on('message2', function (msg) {
-      console.log('the client receives player msg: ' + msg);
-    });
-    // socket.on('options', function (id) {
-    //   console.log('the client receives player id: ' + id);
-    //   document.getElementById('fold'+id).hidden = "";
-    //   document.getElementById('check'+id).hidden = "";
-    //   document.getElementById('raise'+id).hidden = "";
-    //   document.getElementById('call'+id).hidden = "";
-    // })
-  });
-});
+//     // socket.on('layCards', function (cards) {
+//     //   console.log('community cards are: '+ cards);
+//     // })
+//     socket.on('message2', function (msg) {
+//       console.log('the client receives player msg: ' + msg);
+//     });
+//     // socket.on('options', function (id) {
+//     //   console.log('the client receives player id: ' + id);
+//     //   document.getElementById('fold'+id).hidden = "";
+//     //   document.getElementById('check'+id).hidden = "";
+//     //   document.getElementById('raise'+id).hidden = "";
+//     //   document.getElementById('call'+id).hidden = "";
+//     // })
+//   });
+// });
 
 const playerActionFoldButton = document.getElementsByName('fold');
 playerActionFoldButton.forEach(function (eachButton) {
@@ -228,10 +281,18 @@ playerActionAllInButton.forEach(function (eachButton) {
   eachButton.addEventListener('click', function (e) {
     console.log('allIn button was clicked');
 
-    document.getElementById('fold' + eachButton.getAttribute('id').slice(-1)).hidden = 'hidden';
-    document.getElementById('check' + eachButton.getAttribute('id').slice(-1)).hidden = 'hidden';
-    document.getElementById('raise' + eachButton.getAttribute('id').slice(-1)).hidden = 'hidden';
-    document.getElementById('call' + eachButton.getAttribute('id').slice(-1)).hidden = 'hidden';
+    document.getElementById(
+      'fold' + eachButton.getAttribute('id').slice(-1)
+    ).hidden = 'hidden';
+    document.getElementById(
+      'check' + eachButton.getAttribute('id').slice(-1)
+    ).hidden = 'hidden';
+    document.getElementById(
+      'raise' + eachButton.getAttribute('id').slice(-1)
+    ).hidden = 'hidden';
+    document.getElementById(
+      'call' + eachButton.getAttribute('id').slice(-1)
+    ).hidden = 'hidden';
     document.getElementById(
       'allIn' + eachButton.getAttribute('id').slice(-1)
     ).hidden = 'hidden';
@@ -289,6 +350,14 @@ playerActionRaiseButton.forEach(function (eachButton) {
     ).hidden = 'hidden';
     document.getElementById('raiseSlider' + eachButton.value).style.display =
       '';
+
+    //FIX: create html entry, display/set min, max under the slide bar
+    const range = document.getElementById(
+      'myRange' + eachButton.getAttribute('id').slice(-1)
+    );
+    console.log(range.min);
+    console.log(range.max);
+    console.log(range.value);
   });
 });
 
@@ -303,7 +372,21 @@ playerActionSlideButton.forEach(function (eachButton) {
     document.getElementById(
       'raiseSlider' + eachButton.getAttribute('id').slice(-1)
     ).style.display = 'none';
+    document.getElementById(
+      'amount' + eachButton.getAttribute('id').slice(-1)
+    ).innerHTML = '';
+
+    // document.getElementById(
+    //   'check' + eachButton.getAttribute('id').slice(-1)
+    // ).hidden = 'hidden';
+    // document.getElementById(
+    //   'call' + eachButton.getAttribute('id').slice(-1)
+    // ).hidden = 'hidden';
+    // document.getElementById(
+    //   'fold' + eachButton.getAttribute('id').slice(-1)
+    // ).hidden = 'hidden';
   });
+
   eachButton.addEventListener('input', function (e) {
     console.log('showing ammount ' + eachButton.value);
     document.getElementById(
@@ -360,6 +443,7 @@ function internal_FixTheSuiting(suit) {
 //////////////////////////////////////////////////////
 /////   Send http request using 'fetch'    ///////////
 //////////////////////////////////////////////////////
+
 // const radioButtons = document.getElementsByName('drone');
 // radioButtons.forEach(function(eachButton){
 //   eachButton.addEventListener('click', function(e) {
@@ -418,3 +502,191 @@ function internal_FixTheSuiting(suit) {
 //     console.log(error);
 //   });
 // });
+
+const seatButton = document.getElementsByName('seat');
+seatButton.forEach(function (eachButton) {
+  eachButton.addEventListener('click', function (e) {
+    console.log('button was clicked');
+
+    updatePlayerSeat(eachButton.value);
+    for (var i = 1; i < 8; i++) {
+      //set other seats non-clickable
+      if (i != eachButton.value) {
+        document.getElementById('playerSeat' + i).disabled = true;
+      }
+    }
+    socket.emit('joinGameEvent', { player_id: eachButton.value });
+  });
+});
+
+// const joinSeatButton = document.getElementsByName('seat');
+// joinSeatButton.forEach(function (eachButton) {
+//   eachButton.addEventListener('click', function (e) {
+//     console.log('button was clicked');
+
+//     updatePlayerSeat(eachButton);
+
+//     socket.emit('joinGameEvent', { player_id: eachButton.value });
+//     socket.on('faceDownCards', function (player) {
+//       console.log('the client receives player list: ' + player);
+//       console.log('the client receives player carda: ' + player.carda);
+//       document.getElementById(
+//         'img' + player.player_id + 'a'
+//       ).src = internal_GetCardImageUrl(player.carda);
+//       document.getElementById('img' + player.player_id + 'a').width = 100;
+//       document.getElementById('img' + player.player_id + 'a').height = 140;
+//       document.getElementById(
+//         'img' + player.player_id + 'b'
+//       ).src = internal_GetCardImageUrl(player.cardb);
+//       document.getElementById('img' + player.player_id + 'b').width = 100;
+//       document.getElementById('img' + player.player_id + 'b').height = 140;
+//       document.getElementById('imgFlopCard0').hidden = 'hidden';
+//       document.getElementById('imgFlopCard1').hidden = 'hidden';
+//       document.getElementById('imgFlopCard2').hidden = 'hidden';
+//       document.getElementById('imgTurnCard').hidden = 'hidden';
+//       document.getElementById('imgRiverCard').hidden = 'hidden';
+//     });
+
+//     // socket.on('layCards', function (cards) {
+//     //   console.log('community cards are: '+ cards);
+//     // })
+//     socket.on('message2', function (msg) {
+//       console.log('the client receives player msg: ' + msg);
+//     });
+//     // socket.on('options', function (id) {
+//     //   console.log('the client receives player id: ' + id);
+//     //   document.getElementById('fold'+id).hidden = "";
+//     //   document.getElementById('check'+id).hidden = "";
+//     //   document.getElementById('raise'+id).hidden = "";
+//     //   document.getElementById('call'+id).hidden = "";
+//     // })
+//   });
+// });
+
+//update player DOM
+function updatePlayerSeat(seatId) {
+  for (var i = 1; i < 8; i++) {
+    if (seatId - 1 + i <= 7) {
+      document
+        .getElementById('playerBox' + i)
+        .appendChild(document.getElementById('playerSeat' + (seatId - 1 + i)));
+      document
+        .getElementById('playerBox' + i)
+        .appendChild(document.getElementById('info' + (seatId - 1 + i)));
+      document
+        .getElementById('playerBox' + i)
+        .appendChild(document.getElementById('button' + (seatId - 1 + i)));
+      document
+        .getElementById('playerBox' + i)
+        .appendChild(
+          document.getElementById('playerInfoBox' + (seatId - 1 + i))
+        );
+      document
+        .getElementById('playerInfoBox' + (seatId - 1 + i))
+        .appendChild(document.getElementById('account' + (seatId - 1 + i)));
+      document
+        .getElementById('playerInfoBox' + (seatId - 1 + i))
+        .appendChild(
+          document.getElementById('accountBalance' + (seatId - 1 + i))
+        );
+
+      document
+        .getElementById('cardBox' + i)
+        .appendChild(document.getElementById('img' + (seatId - 1 + i) + 'a'));
+      document
+        .getElementById('cardBox' + i)
+        .appendChild(document.getElementById('img' + (seatId - 1 + i) + 'b'));
+    } else {
+      document
+        .getElementById('playerBox' + i)
+        .appendChild(document.getElementById('playerSeat' + (seatId - 8 + i)));
+      document
+        .getElementById('playerBox' + i)
+        .appendChild(document.getElementById('info' + (seatId - 8 + i)));
+      document
+        .getElementById('playerBox' + i)
+        .appendChild(document.getElementById('button' + (seatId - 8 + i)));
+      document
+        .getElementById('playerBox' + i)
+        .appendChild(
+          document.getElementById('playerInfoBox' + (seatId - 8 + i))
+        );
+      document
+        .getElementById('playerInfoBox' + (seatId - 8 + i))
+        .appendChild(document.getElementById('account' + (seatId - 8 + i)));
+      document
+        .getElementById('playerInfoBox' + (seatId - 8 + i))
+        .appendChild(
+          document.getElementById('accountBalance' + (seatId - 8 + i))
+        );
+      document
+        .getElementById('cardBox' + i)
+        .appendChild(document.getElementById('img' + (seatId - 8 + i) + 'a'));
+      document
+        .getElementById('cardBox' + i)
+        .appendChild(document.getElementById('img' + (seatId - 8 + i) + 'b'));
+    }
+
+    document.getElementById('playerSeat' + seatId).src = 'images/user.png.png';
+    document.getElementById('playerSeat' + seatId).disabled = true;
+  }
+}
+
+socket.on('faceDownCards', function (playerObj) {
+  console.log('the client receives player list: ' + playerObj.player);
+  console.log('the client receives player carda: ' + playerObj.player.carda);
+  document.getElementById(
+    'img' + playerObj.player.player_id + 'a'
+  ).src = internal_GetCardImageUrl(playerObj.player.carda);
+  document.getElementById('img' + playerObj.player.player_id + 'a').width = 50;
+  document.getElementById('img' + playerObj.player.player_id + 'a').height = 65;
+  document.getElementById(
+    'img' + playerObj.player.player_id + 'b'
+  ).src = internal_GetCardImageUrl(playerObj.player.cardb);
+  document.getElementById('img' + playerObj.player.player_id + 'b').width = 50;
+  document.getElementById('img' + playerObj.player.player_id + 'b').height = 65;
+  for (var i = 0; i < playerObj.allPlayers.length; i++) {
+    if (playerObj.allPlayers[i].status == 'active') {
+      if (playerObj.allPlayers[i].player_id != playerObj.player.player_id) {
+        document.getElementById(
+          'img' + playerObj.allPlayers[i].player_id + 'a'
+        ).src = 'images/cardback.png';
+        document.getElementById(
+          'img' + playerObj.allPlayers[i].player_id + 'a'
+        ).width = 50;
+        document.getElementById(
+          'img' + playerObj.allPlayers[i].player_id + 'a'
+        ).height = 65;
+        document.getElementById(
+          'img' + playerObj.allPlayers[i].player_id + 'b'
+        ).src = 'images/cardback.png';
+        document.getElementById(
+          'img' + playerObj.allPlayers[i].player_id + 'b'
+        ).width = 50;
+        document.getElementById(
+          'img' + playerObj.allPlayers[i].player_id + 'b'
+        ).height = 65;
+      }
+    }
+  }
+
+  document.getElementById('imgFlopCard0').hidden = 'hidden';
+  document.getElementById('imgFlopCard1').hidden = 'hidden';
+  document.getElementById('imgFlopCard2').hidden = 'hidden';
+  document.getElementById('imgTurnCard').hidden = 'hidden';
+  document.getElementById('imgRiverCard').hidden = 'hidden';
+});
+
+socket.on('showFaceDownCards', function (player) {
+  console.log('the client receives all in: ' + player.player_id);
+  document.getElementById(
+    'img' + player.player_id + 'a'
+  ).src = internal_GetCardImageUrl(player.carda);
+  document.getElementById('img' + player.player_id + 'a').width = 50;
+  document.getElementById('img' + player.player_id + 'a').height = 65;
+  document.getElementById(
+    'img' + player.player_id + 'b'
+  ).src = internal_GetCardImageUrl(player.cardb);
+  document.getElementById('img' + player.player_id + 'b').width = 50;
+  document.getElementById('img' + player.player_id + 'b').height = 65;
+});

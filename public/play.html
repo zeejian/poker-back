@@ -1,0 +1,287 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Texas</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <div class="tableContainer" id="tableContainer">
+
+        <img src="images/poker_table.png" alt="" width="" />
+
+
+        <div class="mainPlayer" id="playerBox1">
+            <input type="image" id="playerSeat1" name="seat" value="1" src="images/seat.png" />
+            <p id="info1" value="1" hidden='true'>Account balance:<span name="bankroll1" id="bankroll1"></span></p>
+            <!-- <p id="info1" value="1" hidden='true' >Account balance:<span name="bankroll1" id="bankroll1"></span></p> -->
+            <img id="button1" src="images/dealerbutton.png" alt="" style="display:none">
+            <div class="playerInfoBox" id="playerInfoBox1">
+                <img id="account1" src="images/chip-account.png" style="display: none">
+                <span id="accountBalance1"></span>
+            </div>
+        </div>
+
+        <div class="player2" id="playerBox2">
+            <input type="image" id="playerSeat2" name="seat" value="2" src="images/seat.png" />
+            <p id="info2" value="2" hidden='true'>Account balance:<span name="bankroll2" id="bankroll2"></span></p>
+            <img id="button2" src="images/dealerbutton.png" alt="" style="display:none">
+            <div class="playerInfoBox" id="playerInfoBox2">
+                <img id="account2" src="images/chip-account.png" style="display: none">
+                <span id="accountBalance2"></span>
+            </div>
+        </div>
+
+        <div class="player3" id="playerBox3">
+            <input type="image" id="playerSeat3" name="seat" value="3" src="images/seat.png" />
+            <p id="info3" value="3" hidden='true'>Account balance:<span name="bankroll3" id="bankroll3"></span></p>
+            <img id="button3" src="images/dealerbutton.png" alt="" style="display:none">
+            <div class="playerInfoBox" id="playerInfoBox3">
+                <img id="account3" src="images/chip-account.png" style="display: none">
+                <span id="accountBalance3"></span>
+            </div>
+        </div>
+
+        <div class="player4" id="playerBox4">
+            <input type="image" id="playerSeat4" name="seat" value="4" src="images/seat.png" />
+            <p id="info4" value="4" hidden='true'>Account balance:<span name="bankroll4" id="bankroll4"></span></p>
+            <img id="button4" src="images/dealerbutton.png" alt="" style="display:none">
+            <div class="playerInfoBox" id="playerInfoBox4">
+                <img id="account4" src="images/chip-account.png" style="display: none">
+                <span id="accountBalance4"></span>
+            </div>
+        </div>
+
+        <div class="player5" id="playerBox5">
+            <input type="image" id="playerSeat5" name="seat" value="5" src="images/seat.png" />
+            <p id="info5" value="5" hidden='true'>Account balance:<span name="bankroll5" id="bankroll5"></span></p>
+            <img id="button5" src="images/dealerbutton.png" alt="" style="display:none">
+            <div class="playerInfoBox" id="playerInfoBox5">
+                <img id="account5" src="images/chip-account.png" style="display: none">
+                <span id="accountBalance5"></span>
+            </div>
+        </div>
+
+        <div class="player6" id="playerBox6">
+            <input type="image" id="playerSeat6" name="seat" value="6" src="images/seat.png" />
+            <p id="info6" value="6" hidden='true'>Account balance:<span name="bankroll6" id="bankroll6"></span></p>
+            <img id="button6" src="images/dealerbutton.png" alt="" style="display:none">
+            <div class="playerInfoBox" id="playerInfoBox6">
+                <img id="account6" src="images/chip-account.png" style="display: none">
+                <span id="accountBalance6"></span>
+            </div>
+        </div>
+
+        <div class="player7" id="playerBox7">
+            <input type="image" id="playerSeat7" name="seat" value="7" src="images/seat.png" />
+            <p id="info7" value="7" hidden='true'>Account balance:<span name="bankroll7" id="bankroll7"></span></p>
+            <img id="button7" src="images/dealerbutton.png" alt="" style="display:none">
+            <div class="playerInfoBox" id="playerInfoBox7">
+                <img id="account7" src="images/chip-account.png" style="display: none">
+                <span id="accountBalance7"></span>
+            </div>
+        </div>
+        <div class="cardBox1" id="cardBox1">
+            <img id="img1a" src="" alt="" />
+            <img id="img1b" src="" alt="" />
+        </div>
+
+        <div class="cardBox2" id="cardBox2">
+            <img id="img2a" src="" alt="" />
+            <img id="img2b" src="" alt="" />
+        </div>
+        <div class="cardBox3" id="cardBox3">
+            <img id="img3a" src="" alt="" />
+            <img id="img3b" src="" alt="" />
+        </div>
+        <div class="cardBox4" id="cardBox4">
+            <img id="img4a" src="" alt="" />
+            <img id="img4b" src="" alt="" />
+        </div>
+        <div class="cardBox5" id="cardBox5">
+            <img id="img5a" src="" alt="" />
+            <img id="img5b" src="" alt="" />
+        </div>
+        <div class="cardBox6" id="cardBox6">
+            <img id="img6a" src="" alt="" />
+            <img id="img6b" src="" alt="" />
+        </div>
+        <div class="cardBox7" id="cardBox7">
+            <img id="img7a" src="" alt="" />
+            <img id="img7b" src="" alt="" />
+        </div>
+        <div class="optionBox">
+            <button type="button" class="regular" name="check" id="check1" value="1" hidden="hidden">
+                check
+            </button>
+            <button type="button" class="regular" name="raise" id="raise1" value="1" hidden="hidden">
+                raise
+            </button>
+            <div class="slidecontainer" id="raiseSlider1" style="display: none">
+                <input type="range" min="" max="" value="" class="slider" name="myRange" id="myRange1">
+                <p>Betting amount:<span name="myAmount" id="amount1"> </p>
+            </div>
+            <button type="button" class="regular" name="call" id="call1" value="1" hidden="hidden">
+                call
+            </button>
+            <button type="button" class="regular" name="fold" id="fold1" value="1" hidden="hidden">
+                fold
+            </button>
+            <button type="button" class="regular" name="allIn" id="allIn1" value="1" hidden="hidden">
+                all in
+            </button>
+        </div>
+        <div class="optionBox">
+            <button type="button" class="regular" name="check" id="check2" value="2" hidden="hidden">
+                check
+            </button>
+            <button type="button" class="regular" name="raise" id="raise2" value="2" hidden="hidden">
+                raise
+            </button>
+            <div class="slidecontainer" id="raiseSlider2" style="display: none">
+                <input type="range" min="" max="" value="" class="slider" name="myRange" id="myRange2">
+                <p>Betting amount:<span name="myAmount" id="amount2"> </p>
+            </div>
+            <button type="button" class="regular" name="call" id="call2" value="2" hidden="hidden">
+                call
+            </button>
+            <button type="button" class="regular" name="fold" id="fold2" value="2" hidden="hidden">
+                fold
+            </button>
+            <button type="button" class="regular" name="allIn" id="allIn2" value="2" hidden="hidden">
+                all in
+            </button>
+        </div>
+        <div class="optionBox">
+            <button type="button" class="regular" name="check" id="check3" value="3" hidden="hidden">
+                check
+            </button>
+            <button type="button" class="regular" name="raise" id="raise3" value="3" hidden="hidden">
+                raise
+            </button>
+            <div class="slidecontainer" id="raiseSlider3" style="display: none">
+                <input type="range" min="" max="" value="" class="slider" name="myRange" id="myRange3">
+                <p>Betting amount:<span name="myAmount" id="amount3"> </p>
+            </div>
+            <button type="button" class="regular" name="call" id="call3" value="3" hidden="hidden">
+                call
+            </button>
+            <button type="button" class="regular" name="fold" id="fold3" value="3" hidden="hidden">
+                fold
+            </button>
+            <button type="button" class="regular" name="allIn" id="allIn3" value="3" hidden="hidden">
+                all in
+            </button>
+        </div>
+        <div class="optionBox">
+            <button type="button" class="regular" name="check" id="check4" value="4" hidden="hidden">
+                check
+            </button>
+            <button type="button" class="regular" name="raise" id="raise4" value="4" hidden="hidden">
+                raise
+            </button>
+            <div class="slidecontainer" id="raiseSlider2" style="display: none">
+                <input type="range" min="" max="" value="" class="slider" name="myRange" id="myRange4">
+                <p>Betting amount:<span name="myAmount" id="amount4"> </p>
+            </div>
+            <button type="button" class="regular" name="call" id="call4" value="4" hidden="hidden">
+                call
+            </button>
+            <button type="button" class="regular" name="fold" id="fold4" value="4" hidden="hidden">
+                fold
+            </button>
+            <button type="button" class="regular" name="allIn" id="allIn4" value="4" hidden="hidden">
+                all in
+            </button>
+        </div>
+        <div class="optionBox">
+            <button type="button" class="regular" name="check" id="check5" value="5" hidden="hidden">
+                check
+            </button>
+            <button type="button" class="regular" name="raise" id="raise5" value="5" hidden="hidden">
+                raise
+            </button>
+            <div class="slidecontainer" id="raiseSlider5" style="display: none">
+                <input type="range" min="" max="" value="" class="slider" name="myRange" id="myRange5">
+                <p>Betting amount:<span name="myAmount" id="amount5"> </p>
+            </div>
+            <button type="button" class="regular" name="call" id="call5" value="5" hidden="hidden">
+                call
+            </button>
+            <button type="button" class="regular" name="fold" id="fold5" value="5" hidden="hidden">
+                fold
+            </button>
+            <button type="button" class="regular" name="allIn" id="allIn5" value="5" hidden="hidden">
+                all in
+            </button>
+        </div>
+        <div class="optionBox">
+            <button type="button" class="regular" name="check" id="check6" value="6" hidden="hidden">
+                check
+            </button>
+            <button type="button" class="regular" name="raise" id="raise6" value="6" hidden="hidden">
+                raise
+            </button>
+            <div class="slidecontainer" id="raiseSlider6" style="display: none">
+                <input type="range" min="" max="" value="" class="slider" name="myRange" id="myRange6">
+                <p>Betting amount:<span name="myAmount" id="amount6"> </p>
+            </div>
+            <button type="button" class="regular" name="call" id="call6" value="6" hidden="hidden">
+                call
+            </button>
+            <button type="button" class="regular" name="fold" id="fold6" value="6" hidden="hidden">
+                fold
+            </button>
+            <button type="button" class="regular" name="allIn" id="allIn6" value="6" hidden="hidden">
+                all in
+            </button>
+        </div>
+        <div class="optionBox">
+            <button type="button" class="regular" name="check" id="check7" value="7" hidden="hidden">
+                check
+            </button>
+            <button type="button" class="regular" name="raise" id="raise7" value="7" hidden="hidden">
+                raise
+            </button>
+            <div class="slidecontainer" id="raiseSlider7" style="display: none">
+                <input type="range" min="" max="" value="" class="slider" name="myRange" id="myRange7">
+                <p>Betting amount:<span name="myAmount" id="amount7"> </p>
+            </div>
+            <button type="button" class="regular" name="call" id="call7" value="7" hidden="hidden">
+                call
+            </button>
+            <button type="button" class="regular" name="fold" id="fold7" value="7" hidden="hidden">
+                fold
+            </button>
+            <button type="button" class="regular" name="allIn" id="allIn7" value="7" hidden="hidden">
+                all in
+            </button>
+        </div>
+        <!-- <div class="playerInfoBox">
+            <img id="account1" src="images/chip-account.png" style="display: none">
+            <span id="accountBalance1"></span>
+        </div>
+        <div class="playerInfoBox">
+            <img id="account2" src="images/chip-account.png" style="display: none">
+            <span id="accountBalance2"></span>
+        </div> -->
+
+        <div class="communityCardBox">
+            <div>
+                <img id="imgFlopCard0" src="" alt="" />
+                <img id="imgFlopCard1" src="" alt="" />
+                <img id="imgFlopCard2" src="" alt="" />
+                <img id="imgTurnCard" src="" alt="" />
+                <img id="imgRiverCard" src="" alt="" />
+            </div>
+        </div>
+    </div>
+
+    <script src="socket.io/socket.io.js"></script>
+    <script src="client.js"></script>
+</body>
+
+</html>

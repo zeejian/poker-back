@@ -32,7 +32,7 @@ var river = '';
 var gameStage; //enum: preFlop, flop, turn, river
 
 app.get('/', (request, response) => {
-  readFile('./public/home.html', 'utf8', (err, html) => {
+  readFile('./public/play.html', 'utf8', (err, html) => {
     if (err) {
       response.status(500).send('sorry, out of order');
     }
@@ -67,6 +67,24 @@ server.listen(process.env.PORT || 3000, () =>
 // });
 
 io.on('connection', function (socket) {
+  if (flop.length == 3) {
+    io.to(socket.id).emit('layFlopCards', flop);
+  }
+  if (turn != '') {
+    io.to(socket.id).emit('layTurnCard', turn);
+  }
+  if (river != '') {
+    io.to(socket.id).emit('layRiverCard', river);
+  }
+
+  if (playerList.length != 0) {
+    playerList.forEach((e) => {
+      io.to(socket.id).emit('playerSeated', e);
+      io.to(socket.id).emit('updateOtherPlayers', e);
+      io.to(socket.id).emit('updatePlayerInfo', e);
+    });
+  }
+
   socket.on('disconnect', function (player) {
     console.log('A client close the window:', socket.id);
 
@@ -113,17 +131,23 @@ io.on('connection', function (socket) {
     );
     playerList.push(onePlayer);
     socketToPlayerMap.set(socket.id, onePlayer);
-    if (flop.length == 3) {
-      io.to(socket.id).emit('layFlopCards', flop);
-    }
-    if (turn != '') {
-      io.to(socket.id).emit('layTurnCard', turn);
-    }
-    if (river != '') {
-      io.to(socket.id).emit('layRiverCard', river);
-    }
+
+    // if (flop.length == 3) {
+    //   io.to(socket.id).emit('layFlopCards', flop);
+    // }
+    // if (turn != '') {
+    //   io.to(socket.id).emit('layTurnCard', turn);
+    // }
+    // if (river != '') {
+    //   io.to(socket.id).emit('layRiverCard', river);
+    // }
 
     //wait for 1 second, if gameNotOn(if playerList>1, start game, otherwise only wait for other players), else do nothing.
+    socket.broadcast.emit('playerSeated', onePlayer);
+    socket.emit('updateMainPlayer', onePlayer);
+    socket.broadcast.emit('updateOtherPlayers', onePlayer);
+    //io.emit('updatePlayerInfo', onePlayer);
+
     if (!isGameOn) {
       startGame(socket, io);
     } else {
@@ -152,6 +176,7 @@ io.on('connection', function (socket) {
       next = getNextPlayer(data);
       next.bankroll += next.total_bet;
       collectChips(next, getStatusPlayers('folded'));
+      io.emit('updatePlayerInfo', next);
 
       //wait for seconds to start new round
       console.log('this round ended.');
@@ -177,10 +202,23 @@ io.on('connection', function (socket) {
 
     if (highestBet > player.subtotal_bet) {
       updatePlayerBet(player.player_id, highestBet - player.subtotal_bet);
+      io.emit('updatePlayerInfo', player);
       next = getNextPlayer(player);
+
+      console.log(JSON.stringify(player));
+      console.log(JSON.stringify(next));
+
       //if the next players bet equals to highestBet,
       //we do not want to give the option 'call'?
       //if the next players bet is less than the highestBet, we dont give option 'check'?
+      if (next.player_id == player.player_id) {
+        socket.broadcast.emit('showFaceDownCards', player);
+        while (gameStage != 'river') {
+          dealCommunityCards();
+        }
+        handleShowDown();
+      }
+
       if (next.subtotal_bet == highestBet) {
         if (
           (next.player_id == big.player_id && next.total_bet != 20) ||
@@ -286,15 +324,21 @@ io.on('connection', function (socket) {
 
     player = getIdPlayer(parseInt(data.player_id));
     updatePlayerBet(data.player_id, parseInt(data.bet));
+    io.emit('updatePlayerInfo', player);
     //player.subtotal_bet = data.bet;
     //should validate players account balance, betting amount
     //or we calculate and send options with possible maximum one can bet
-
+    console.log('create side pot.' + player);
     if (highestBet > player.subtotal_bet) {
       console.log('create side pot.');
     } else {
       highestBet = player.subtotal_bet;
       next = getNextPlayer(getIdPlayer(player.player_id));
+
+      if (player.bankroll == 0) {
+        updatePlayerStatus(player.player_id, 'allIn');
+        socket.broadcast.emit('showFaceDownCards', player);
+      }
       sendToPlayer(socketToPlayerMap, next);
     }
   });
@@ -309,9 +353,11 @@ io.on('connection', function (socket) {
 
     player = getIdPlayer(parseInt(data.player_id));
     updatePlayerBet(data.player_id, parseInt(data.bet));
+    io.emit('updatePlayerInfo', player);
 
     next = getNextPlayer(getIdPlayer(player.player_id));
-    if (next.subtotal_bet != 0) {
+    updatePlayerStatus(player.player_id, 'allIn');
+    if (next.player_id == player.player_id || next.subtotal_bet == highestBet) {
       // the next player already raised, it should be the previous player as well
       while (gameStage != 'river') {
         dealCommunityCards();
@@ -382,7 +428,7 @@ function handleShowDown() {
   //compare hands
   activePlayers = [];
   for (var i = 0; i < playerList.length; i++) {
-    if (playerList[i].status == 'active') {
+    if (playerList[i].status == 'active' || playerList[i].status == 'allIn') {
       //check flush
       cardset = [];
       cardset.push(playerList[i].carda);
@@ -601,9 +647,14 @@ function startGame(socket, io) {
     button = getButtonPlayer(); // possible to change to async function
     console.log('button player id is: ' + button.player_id);
     dealHoleCards();
+
     socketToPlayerMap.forEach((value, key, map) => {
       console.log('send according to key: ' + key);
-      io.to(key).emit('faceDownCards', value);
+      io.to(key).emit('faceDownCards', {
+        player: value,
+        allPlayers: playerList,
+      });
+      io.emit('updateButton', value);
     });
     next = getNextPlayer(big);
     console.log('sending to next player of big blind: ' + JSON.stringify(next));
@@ -621,6 +672,7 @@ function dealHoleCards() {
   small = getNextPlayer(button);
   updatePlayerRole(small.player_id, 'small');
   updatePlayerBet(small.player_id, 10); //hardcoded small blind 10
+  io.emit('updatePlayerInfo', small);
   //updatePlayer(small.player_id, '', '');
   updatePlayerHoleCards(small);
   console.log('cards deck length is ' + cards.length);
@@ -630,6 +682,7 @@ function dealHoleCards() {
   big = getNextPlayer(small);
   //updatePlayer(next.player_id, '', '');
   updatePlayerBet(big.player_id, 20); //hardcoded big blind 20
+  io.emit('updatePlayerInfo', big);
   updatePlayerHoleCards(big);
   console.log('cards deck length is ' + cards.length);
   console.log('big json: ' + JSON.stringify(big));
@@ -668,7 +721,7 @@ function getNextPlayer(player) {
       return playerList[i];
     }
   }
-  for (var i = 0; i < player.player_id - 1; i++) {
+  for (var i = 0; i < player.player_id; i++) {
     //console.log('player id: '  +playerList[i].player_id);
     if (playerList[i].status == 'active') {
       return playerList[i];
