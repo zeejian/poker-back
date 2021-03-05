@@ -71,6 +71,11 @@
   left: 755px;
 }
 
+/* .mainPlayer input {
+  -webkit-box-shadow: 0 0 0px #da0f0f00;
+  box-shadow: 0 0 30px #def108;
+} */
+
 .player2 {
   position: absolute;
   bottom: 490px;

@@ -38,10 +38,58 @@ socket.on('updateMainPlayer', function (player) {
 });
 
 socket.on('updateOtherPlayers', function (player) {
-  console.log('update other player  info');
+  console.log('update other player info');
   document.getElementById('info' + player.player_id).hidden = '';
   document.getElementById('bankroll' + player.player_id).innerHTML =
     player.bankroll;
+});
+
+socket.on('showResult', function (player) {
+  flop0 = document.getElementById('imgFlopCard0');
+  flop1 = document.getElementById('imgFlopCard1');
+  flop2 = document.getElementById('imgFlopCard2');
+  turn = document.getElementById('imgTurnCard');
+  river = document.getElementById('imgRiverCard');
+
+  player.hand.card.forEach((e) => {
+    console.log('currently card:' + e);
+    console.log('url is :' + e);
+    console.log('flop0 url:' + flop0.value);
+    if (flop0.value == e) {
+      flop0.style = 'border: 5px solid #f15a08;';
+    } else if (flop1.value == e) {
+      flop1.style = 'border: 5px solid #f15a08;';
+    } else if (flop2.value == e) {
+      flop2.style = 'border: 5px solid #f15a08;';
+    } else if (turn.value == e) {
+      turn.style = 'border: 5px solid #f15a08;';
+    } else if (river.value == e) {
+      river.style = 'border: 5px solid #f15a08;';
+    } else if (
+      document.getElementById('img' + player.player_id + 'a').value == e
+    ) {
+      document.getElementById('img' + player.player_id + 'a').style =
+        'border: 5px solid #f15a08;';
+    } else if (
+      document.getElementById('img' + player.player_id + 'b').value == e
+    ) {
+      document.getElementById('img' + player.player_id + 'b').style =
+        'border: 5px solid #f15a08;';
+    } else {
+      alert('did not find card:' + e);
+    }
+  });
+});
+
+socket.on('removeCardHighLight', function (player) {
+  console.log(JSON.stringify(player));
+  document.getElementById('imgFlopCard0').style = '';
+  document.getElementById('imgFlopCard1').style = '';
+  document.getElementById('imgFlopCard2').style = '';
+  document.getElementById('imgTurnCard').style = '';
+  document.getElementById('imgRiverCard').style = '';
+  document.getElementById('img' + player.player_id + 'a').style = '';
+  document.getElementById('img' + player.player_id + 'b').style = '';
 });
 
 socket.on('updatePlayerInfo', function (player) {
@@ -57,7 +105,7 @@ socket.on('updatePlayerInfo', function (player) {
     document.getElementById('bankroll' + player.player_id).innerHTML =
       player.bankroll;
   }
-})
+});
 socket.on('updateButton', function (player) {
   if (player.role == 'button') {
     const button = document.getElementById('button' + player.player_id);
@@ -67,13 +115,48 @@ socket.on('updateButton', function (player) {
   }
 });
 
+socket.on('updateSmallBlind', function (small) {
+  const smallBlind = document.getElementById('small' + small.player_id);
+  smallBlind.style.display = '';
+});
+
+socket.on('updateBigBlind', function (big) {
+  const bigBlind = document.getElementById('big' + big.player_id);
+  bigBlind.style.display = '';
+});
+
+socket.on('updatePot', function (pot) {
+  console.log('pot amount:' + pot);
+  document.getElementById('potAmount').innerHTML = pot;
+});
+
+socket.on('updateDefault', function (players) {
+  players.forEach((p) => {
+    if ((p.status = 'active')) {
+      document.getElementById('small' + p.player_id).style.display = 'none';
+      document.getElementById('big' + p.player_id).style.display = 'none';
+      document.getElementById('button' + p.player_id).style.display = 'none';
+      //FIX: clear hand cards
+      document.getElementById('img' + p.player_id + 'a').hidden = true;
+      document.getElementById('img' + p.player_id + 'b').hidden = true;
+    }
+  });
+
+  document.getElementById('imgFlopCard0').style.display = 'none';
+  document.getElementById('imgFlopCard1').style.display = 'none';
+  document.getElementById('imgFlopCard2').style.display = 'none';
+  document.getElementById('imgTurnCard').style.display = 'none';
+  document.getElementById('imgRiverCard').style.display = 'none';
+});
+
 socket.on('layFlopCards', function (cards) {
   console.log('flop cards are: ' + cards);
   for (var i = 0; i < cards.length; i++) {
-    document.getElementById('imgFlopCard' + i).hidden = '';
+    document.getElementById('imgFlopCard' + i).style.display = '';
     document.getElementById('imgFlopCard' + i).src = internal_GetCardImageUrl(
       cards[i]
     );
+    document.getElementById('imgFlopCard' + i).value = cards[i];
     document.getElementById('imgFlopCard' + i).width = 50;
     document.getElementById('imgFlopCard' + i).height = 65;
   }
@@ -81,18 +164,34 @@ socket.on('layFlopCards', function (cards) {
 
 socket.on('layTurnCard', function (cards) {
   console.log('turn card is: ' + cards);
-  document.getElementById('imgTurnCard').hidden = '';
+  document.getElementById('imgTurnCard').style.display = '';
   document.getElementById('imgTurnCard').src = internal_GetCardImageUrl(cards);
+  document.getElementById('imgTurnCard').value = cards;
   document.getElementById('imgTurnCard').width = 50;
   document.getElementById('imgTurnCard').height = 65;
 });
 
 socket.on('layRiverCard', function (cards) {
   console.log('river card is: ' + cards);
-  document.getElementById('imgRiverCard').hidden = '';
+  document.getElementById('imgRiverCard').style.display = '';
   document.getElementById('imgRiverCard').src = internal_GetCardImageUrl(cards);
+  document.getElementById('imgRiverCard').value = cards;
   document.getElementById('imgRiverCard').width = 50;
   document.getElementById('imgRiverCard').height = 65;
+});
+
+socket.on('highLightPlayer', function (playerObj) {
+  console.log('highLight player' + JSON.stringify(playerObj));
+  playerObj.allPlayers.forEach((e) => {
+    if (e.status == 'active') {
+      if (playerObj.player.player_id != e.player_id) {
+        document.getElementById('playerSeat' + e.player_id).style = '';
+      } else {
+        document.getElementById('playerSeat' + e.player_id).style =
+          '-webkit-box-shadow: 0 0 0px #da0f0f00;box-shadow: 0 0 30px #def108;';
+      }
+    }
+  });
 });
 
 socket.on('options1', function (player) {
@@ -133,6 +232,13 @@ socket.on('options3', function (player) {
   document.getElementById('fold' + id).hidden = '';
   document.getElementById('allIn' + id).hidden = '';
   document.getElementById('allIn' + id).value = player.minToCall;
+});
+
+socket.on('options4', function (player) {
+  id = player.player_id;
+  console.log('the client receives player id: ' + id);
+  document.getElementById('fold' + id).hidden = '';
+  document.getElementById('call' + id).hidden = '';
 });
 
 socket.on('playerOwnWinMsg', function (player) {
@@ -187,48 +293,6 @@ socket.on('generalLoseMsg', function (players) {
   document.getElementById('ownMsg' + winnerId).innerHTML =
     "Player with ID '" + winnerId + "' loses";
 });
-
-// const joinSeatButton = document.getElementsByName('seat');
-// joinSeatButton.forEach(function (eachButton) {
-//   eachButton.addEventListener('click', function (e) {
-//     console.log('button was clicked');
-
-//     socket.emit('joinGameEvent', { player_id: eachButton.value });
-//     socket.on('faceDownCards', function (player) {
-//       console.log('the client receives player list: ' + player);
-//       console.log('the client receives player carda: ' + player.carda);
-//       document.getElementById(
-//         'img' + player.player_id + 'a'
-//       ).src = internal_GetCardImageUrl(player.carda);
-//       document.getElementById('img' + player.player_id + 'a').width = 100;
-//       document.getElementById('img' + player.player_id + 'a').height = 140;
-//       document.getElementById(
-//         'img' + player.player_id + 'b'
-//       ).src = internal_GetCardImageUrl(player.cardb);
-//       document.getElementById('img' + player.player_id + 'b').width = 100;
-//       document.getElementById('img' + player.player_id + 'b').height = 140;
-//       document.getElementById('imgFlopCard0').hidden = 'hidden';
-//       document.getElementById('imgFlopCard1').hidden = 'hidden';
-//       document.getElementById('imgFlopCard2').hidden = 'hidden';
-//       document.getElementById('imgTurnCard').hidden = 'hidden';
-//       document.getElementById('imgRiverCard').hidden = 'hidden';
-//     });
-
-//     // socket.on('layCards', function (cards) {
-//     //   console.log('community cards are: '+ cards);
-//     // })
-//     socket.on('message2', function (msg) {
-//       console.log('the client receives player msg: ' + msg);
-//     });
-//     // socket.on('options', function (id) {
-//     //   console.log('the client receives player id: ' + id);
-//     //   document.getElementById('fold'+id).hidden = "";
-//     //   document.getElementById('check'+id).hidden = "";
-//     //   document.getElementById('raise'+id).hidden = "";
-//     //   document.getElementById('call'+id).hidden = "";
-//     // })
-//   });
-// });
 
 const playerActionFoldButton = document.getElementsByName('fold');
 playerActionFoldButton.forEach(function (eachButton) {
@@ -440,6 +504,168 @@ function internal_FixTheSuiting(suit) {
   return suit;
 }
 
+const seatButton = document.getElementsByName('seat');
+seatButton.forEach(function (eachButton) {
+  eachButton.addEventListener('click', function (e) {
+    console.log('button was clicked');
+
+    updatePlayerSeat(eachButton.value);
+    for (var i = 1; i < 8; i++) {
+      //set other seats non-clickable
+      if (i != eachButton.value) {
+        document.getElementById('playerSeat' + i).disabled = true;
+      }
+    }
+    socket.emit('joinGameEvent', { player_id: eachButton.value });
+  });
+});
+
+//update player DOM
+function updatePlayerSeat(seatId) {
+  for (var i = 1; i < 8; i++) {
+    if (seatId - 1 + i <= 7) {
+      document
+        .getElementById('playerBox' + i)
+        .appendChild(document.getElementById('playerSeat' + (seatId - 1 + i)));
+      document
+        .getElementById('playerBox' + i)
+        .appendChild(document.getElementById('info' + (seatId - 1 + i)));
+      document
+        .getElementById('playerBox' + i)
+        .appendChild(document.getElementById('button' + (seatId - 1 + i)));
+      document
+        .getElementById('playerBox' + i)
+        .appendChild(document.getElementById('small' + (seatId - 1 + i)));
+      document
+        .getElementById('playerBox' + i)
+        .appendChild(document.getElementById('big' + (seatId - 1 + i)));
+      document
+        .getElementById('playerBox' + i)
+        .appendChild(
+          document.getElementById('playerInfoBox' + (seatId - 1 + i))
+        );
+      document
+        .getElementById('playerInfoBox' + (seatId - 1 + i))
+        .appendChild(document.getElementById('account' + (seatId - 1 + i)));
+      document
+        .getElementById('playerInfoBox' + (seatId - 1 + i))
+        .appendChild(
+          document.getElementById('accountBalance' + (seatId - 1 + i))
+        );
+
+      document
+        .getElementById('cardBox' + i)
+        .appendChild(document.getElementById('img' + (seatId - 1 + i) + 'a'));
+      document
+        .getElementById('cardBox' + i)
+        .appendChild(document.getElementById('img' + (seatId - 1 + i) + 'b'));
+    } else {
+      document
+        .getElementById('playerBox' + i)
+        .appendChild(document.getElementById('playerSeat' + (seatId - 8 + i)));
+      document
+        .getElementById('playerBox' + i)
+        .appendChild(document.getElementById('info' + (seatId - 8 + i)));
+      document
+        .getElementById('playerBox' + i)
+        .appendChild(document.getElementById('button' + (seatId - 8 + i)));
+      document
+        .getElementById('playerBox' + i)
+        .appendChild(document.getElementById('small' + (seatId - 8 + i)));
+      document
+        .getElementById('playerBox' + i)
+        .appendChild(document.getElementById('big' + (seatId - 8 + i)));
+      document
+        .getElementById('playerBox' + i)
+        .appendChild(
+          document.getElementById('playerInfoBox' + (seatId - 8 + i))
+        );
+      document
+        .getElementById('playerInfoBox' + (seatId - 8 + i))
+        .appendChild(document.getElementById('account' + (seatId - 8 + i)));
+      document
+        .getElementById('playerInfoBox' + (seatId - 8 + i))
+        .appendChild(
+          document.getElementById('accountBalance' + (seatId - 8 + i))
+        );
+      document
+        .getElementById('cardBox' + i)
+        .appendChild(document.getElementById('img' + (seatId - 8 + i) + 'a'));
+      document
+        .getElementById('cardBox' + i)
+        .appendChild(document.getElementById('img' + (seatId - 8 + i) + 'b'));
+    }
+
+    document.getElementById('playerSeat' + seatId).src = 'images/user.png.png';
+    document.getElementById('playerSeat' + seatId).disabled = true;
+  }
+}
+
+socket.on('faceDownCards', function (playerObj) {
+  console.log('the client receives player list: ' + playerObj.player);
+  console.log('the client receives player carda: ' + playerObj.player.carda);
+  document.getElementById(
+    'img' + playerObj.player.player_id + 'a'
+  ).src = internal_GetCardImageUrl(playerObj.player.carda);
+  document.getElementById('img' + playerObj.player.player_id + 'a').value =
+    playerObj.player.carda;
+  document.getElementById('img' + playerObj.player.player_id + 'a').width = 50;
+  document.getElementById('img' + playerObj.player.player_id + 'a').height = 65;
+  document.getElementById(
+    'img' + playerObj.player.player_id + 'b'
+  ).src = internal_GetCardImageUrl(playerObj.player.cardb);
+  document.getElementById('img' + playerObj.player.player_id + 'b').value =
+    playerObj.player.cardb;
+  document.getElementById('img' + playerObj.player.player_id + 'b').width = 50;
+  document.getElementById('img' + playerObj.player.player_id + 'b').height = 65;
+  for (var i = 0; i < playerObj.allPlayers.length; i++) {
+    if (playerObj.allPlayers[i].status == 'active') {
+      if (playerObj.allPlayers[i].player_id != playerObj.player.player_id) {
+        document.getElementById(
+          'img' + playerObj.allPlayers[i].player_id + 'a'
+        ).src = 'images/cardback.png';
+        document.getElementById(
+          'img' + playerObj.allPlayers[i].player_id + 'a'
+        ).width = 50;
+        document.getElementById(
+          'img' + playerObj.allPlayers[i].player_id + 'a'
+        ).height = 65;
+        document.getElementById(
+          'img' + playerObj.allPlayers[i].player_id + 'b'
+        ).src = 'images/cardback.png';
+        document.getElementById(
+          'img' + playerObj.allPlayers[i].player_id + 'b'
+        ).width = 50;
+        document.getElementById(
+          'img' + playerObj.allPlayers[i].player_id + 'b'
+        ).height = 65;
+      }
+    }
+  }
+
+  document.getElementById('imgFlopCard0').hidden = 'hidden';
+  document.getElementById('imgFlopCard1').hidden = 'hidden';
+  document.getElementById('imgFlopCard2').hidden = 'hidden';
+  document.getElementById('imgTurnCard').hidden = 'hidden';
+  document.getElementById('imgRiverCard').hidden = 'hidden';
+});
+
+socket.on('showFaceDownCards', function (player) {
+  console.log('the client receives all in: ' + player.player_id);
+  document.getElementById(
+    'img' + player.player_id + 'a'
+  ).src = internal_GetCardImageUrl(player.carda);
+  document.getElementById('img' + player.player_id + 'a').value = player.carda;
+  document.getElementById('img' + player.player_id + 'a').width = 50;
+  document.getElementById('img' + player.player_id + 'a').height = 65;
+  document.getElementById(
+    'img' + player.player_id + 'b'
+  ).src = internal_GetCardImageUrl(player.cardb);
+  document.getElementById('img' + player.player_id + 'b').value = player.cardb;
+  document.getElementById('img' + player.player_id + 'b').width = 50;
+  document.getElementById('img' + player.player_id + 'b').height = 65;
+});
+
 //////////////////////////////////////////////////////
 /////   Send http request using 'fetch'    ///////////
 //////////////////////////////////////////////////////
@@ -502,191 +728,3 @@ function internal_FixTheSuiting(suit) {
 //     console.log(error);
 //   });
 // });
-
-const seatButton = document.getElementsByName('seat');
-seatButton.forEach(function (eachButton) {
-  eachButton.addEventListener('click', function (e) {
-    console.log('button was clicked');
-
-    updatePlayerSeat(eachButton.value);
-    for (var i = 1; i < 8; i++) {
-      //set other seats non-clickable
-      if (i != eachButton.value) {
-        document.getElementById('playerSeat' + i).disabled = true;
-      }
-    }
-    socket.emit('joinGameEvent', { player_id: eachButton.value });
-  });
-});
-
-// const joinSeatButton = document.getElementsByName('seat');
-// joinSeatButton.forEach(function (eachButton) {
-//   eachButton.addEventListener('click', function (e) {
-//     console.log('button was clicked');
-
-//     updatePlayerSeat(eachButton);
-
-//     socket.emit('joinGameEvent', { player_id: eachButton.value });
-//     socket.on('faceDownCards', function (player) {
-//       console.log('the client receives player list: ' + player);
-//       console.log('the client receives player carda: ' + player.carda);
-//       document.getElementById(
-//         'img' + player.player_id + 'a'
-//       ).src = internal_GetCardImageUrl(player.carda);
-//       document.getElementById('img' + player.player_id + 'a').width = 100;
-//       document.getElementById('img' + player.player_id + 'a').height = 140;
-//       document.getElementById(
-//         'img' + player.player_id + 'b'
-//       ).src = internal_GetCardImageUrl(player.cardb);
-//       document.getElementById('img' + player.player_id + 'b').width = 100;
-//       document.getElementById('img' + player.player_id + 'b').height = 140;
-//       document.getElementById('imgFlopCard0').hidden = 'hidden';
-//       document.getElementById('imgFlopCard1').hidden = 'hidden';
-//       document.getElementById('imgFlopCard2').hidden = 'hidden';
-//       document.getElementById('imgTurnCard').hidden = 'hidden';
-//       document.getElementById('imgRiverCard').hidden = 'hidden';
-//     });
-
-//     // socket.on('layCards', function (cards) {
-//     //   console.log('community cards are: '+ cards);
-//     // })
-//     socket.on('message2', function (msg) {
-//       console.log('the client receives player msg: ' + msg);
-//     });
-//     // socket.on('options', function (id) {
-//     //   console.log('the client receives player id: ' + id);
-//     //   document.getElementById('fold'+id).hidden = "";
-//     //   document.getElementById('check'+id).hidden = "";
-//     //   document.getElementById('raise'+id).hidden = "";
-//     //   document.getElementById('call'+id).hidden = "";
-//     // })
-//   });
-// });
-
-//update player DOM
-function updatePlayerSeat(seatId) {
-  for (var i = 1; i < 8; i++) {
-    if (seatId - 1 + i <= 7) {
-      document
-        .getElementById('playerBox' + i)
-        .appendChild(document.getElementById('playerSeat' + (seatId - 1 + i)));
-      document
-        .getElementById('playerBox' + i)
-        .appendChild(document.getElementById('info' + (seatId - 1 + i)));
-      document
-        .getElementById('playerBox' + i)
-        .appendChild(document.getElementById('button' + (seatId - 1 + i)));
-      document
-        .getElementById('playerBox' + i)
-        .appendChild(
-          document.getElementById('playerInfoBox' + (seatId - 1 + i))
-        );
-      document
-        .getElementById('playerInfoBox' + (seatId - 1 + i))
-        .appendChild(document.getElementById('account' + (seatId - 1 + i)));
-      document
-        .getElementById('playerInfoBox' + (seatId - 1 + i))
-        .appendChild(
-          document.getElementById('accountBalance' + (seatId - 1 + i))
-        );
-
-      document
-        .getElementById('cardBox' + i)
-        .appendChild(document.getElementById('img' + (seatId - 1 + i) + 'a'));
-      document
-        .getElementById('cardBox' + i)
-        .appendChild(document.getElementById('img' + (seatId - 1 + i) + 'b'));
-    } else {
-      document
-        .getElementById('playerBox' + i)
-        .appendChild(document.getElementById('playerSeat' + (seatId - 8 + i)));
-      document
-        .getElementById('playerBox' + i)
-        .appendChild(document.getElementById('info' + (seatId - 8 + i)));
-      document
-        .getElementById('playerBox' + i)
-        .appendChild(document.getElementById('button' + (seatId - 8 + i)));
-      document
-        .getElementById('playerBox' + i)
-        .appendChild(
-          document.getElementById('playerInfoBox' + (seatId - 8 + i))
-        );
-      document
-        .getElementById('playerInfoBox' + (seatId - 8 + i))
-        .appendChild(document.getElementById('account' + (seatId - 8 + i)));
-      document
-        .getElementById('playerInfoBox' + (seatId - 8 + i))
-        .appendChild(
-          document.getElementById('accountBalance' + (seatId - 8 + i))
-        );
-      document
-        .getElementById('cardBox' + i)
-        .appendChild(document.getElementById('img' + (seatId - 8 + i) + 'a'));
-      document
-        .getElementById('cardBox' + i)
-        .appendChild(document.getElementById('img' + (seatId - 8 + i) + 'b'));
-    }
-
-    document.getElementById('playerSeat' + seatId).src = 'images/user.png.png';
-    document.getElementById('playerSeat' + seatId).disabled = true;
-  }
-}
-
-socket.on('faceDownCards', function (playerObj) {
-  console.log('the client receives player list: ' + playerObj.player);
-  console.log('the client receives player carda: ' + playerObj.player.carda);
-  document.getElementById(
-    'img' + playerObj.player.player_id + 'a'
-  ).src = internal_GetCardImageUrl(playerObj.player.carda);
-  document.getElementById('img' + playerObj.player.player_id + 'a').width = 50;
-  document.getElementById('img' + playerObj.player.player_id + 'a').height = 65;
-  document.getElementById(
-    'img' + playerObj.player.player_id + 'b'
-  ).src = internal_GetCardImageUrl(playerObj.player.cardb);
-  document.getElementById('img' + playerObj.player.player_id + 'b').width = 50;
-  document.getElementById('img' + playerObj.player.player_id + 'b').height = 65;
-  for (var i = 0; i < playerObj.allPlayers.length; i++) {
-    if (playerObj.allPlayers[i].status == 'active') {
-      if (playerObj.allPlayers[i].player_id != playerObj.player.player_id) {
-        document.getElementById(
-          'img' + playerObj.allPlayers[i].player_id + 'a'
-        ).src = 'images/cardback.png';
-        document.getElementById(
-          'img' + playerObj.allPlayers[i].player_id + 'a'
-        ).width = 50;
-        document.getElementById(
-          'img' + playerObj.allPlayers[i].player_id + 'a'
-        ).height = 65;
-        document.getElementById(
-          'img' + playerObj.allPlayers[i].player_id + 'b'
-        ).src = 'images/cardback.png';
-        document.getElementById(
-          'img' + playerObj.allPlayers[i].player_id + 'b'
-        ).width = 50;
-        document.getElementById(
-          'img' + playerObj.allPlayers[i].player_id + 'b'
-        ).height = 65;
-      }
-    }
-  }
-
-  document.getElementById('imgFlopCard0').hidden = 'hidden';
-  document.getElementById('imgFlopCard1').hidden = 'hidden';
-  document.getElementById('imgFlopCard2').hidden = 'hidden';
-  document.getElementById('imgTurnCard').hidden = 'hidden';
-  document.getElementById('imgRiverCard').hidden = 'hidden';
-});
-
-socket.on('showFaceDownCards', function (player) {
-  console.log('the client receives all in: ' + player.player_id);
-  document.getElementById(
-    'img' + player.player_id + 'a'
-  ).src = internal_GetCardImageUrl(player.carda);
-  document.getElementById('img' + player.player_id + 'a').width = 50;
-  document.getElementById('img' + player.player_id + 'a').height = 65;
-  document.getElementById(
-    'img' + player.player_id + 'b'
-  ).src = internal_GetCardImageUrl(player.cardb);
-  document.getElementById('img' + player.player_id + 'b').width = 50;
-  document.getElementById('img' + player.player_id + 'b').height = 65;
-});

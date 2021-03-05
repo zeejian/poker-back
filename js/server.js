@@ -82,6 +82,7 @@ io.on('connection', function (socket) {
       io.to(socket.id).emit('playerSeated', e);
       io.to(socket.id).emit('updateOtherPlayers', e);
       io.to(socket.id).emit('updatePlayerInfo', e);
+      io.to(socket.id).emit('updatePot', pot);
     });
   }
 
@@ -127,6 +128,7 @@ io.on('connection', function (socket) {
       '',
       'inactive',
       0,
+      0,
       0
     );
     playerList.push(onePlayer);
@@ -149,7 +151,7 @@ io.on('connection', function (socket) {
     //io.emit('updatePlayerInfo', onePlayer);
 
     if (!isGameOn) {
-      startGame(socket, io);
+      startGame( io);
     } else {
       console.log('waiting for this round finish.');
     }
@@ -177,12 +179,13 @@ io.on('connection', function (socket) {
       next.bankroll += next.total_bet;
       collectChips(next, getStatusPlayers('folded'));
       io.emit('updatePlayerInfo', next);
+      io.emit('updatePot', pot);
 
       //wait for seconds to start new round
       console.log('this round ended.');
       isGameOn = false;
       if (!isGameOn) {
-        startGame(socket, io);
+        startGame( io);
       } else {
         //could it be 'fold' is hit but new game is started by new joined players
         console.log('new players are in.');
@@ -203,6 +206,7 @@ io.on('connection', function (socket) {
     if (highestBet > player.subtotal_bet) {
       updatePlayerBet(player.player_id, highestBet - player.subtotal_bet);
       io.emit('updatePlayerInfo', player);
+      io.emit('updatePot', pot);
       next = getNextPlayer(player);
 
       console.log(JSON.stringify(player));
@@ -216,7 +220,7 @@ io.on('connection', function (socket) {
         while (gameStage != 'river') {
           dealCommunityCards();
         }
-        handleShowDown();
+        handleShowDown(io);
       }
 
       if (next.subtotal_bet == highestBet) {
@@ -239,7 +243,7 @@ io.on('connection', function (socket) {
             button = getRolePlayers('button')[0];
             sendToPlayer(socketToPlayerMap, getNextPlayer(button));
           } else {
-            handleShowDown();
+            handleShowDown(io);
             gameStage = 'preFlop';
           }
         } else {
@@ -279,7 +283,7 @@ io.on('connection', function (socket) {
           button = getRolePlayers('button')[0];
           sendToPlayer(socketToPlayerMap, getNextPlayer(button)); //dont send call option
         } else {
-          handleShowDown();
+          handleShowDown(io);
           gameStage = 'preFlop';
         }
       } else {
@@ -298,7 +302,7 @@ io.on('connection', function (socket) {
             button = getRolePlayers('button')[0];
             sendToPlayer(socketToPlayerMap, getNextPlayer(button)); //dont send call optio
           } else {
-            handleShowDown();
+            handleShowDown(io);
             gameStage = 'preFlop';
           }
         } else {
@@ -325,6 +329,7 @@ io.on('connection', function (socket) {
     player = getIdPlayer(parseInt(data.player_id));
     updatePlayerBet(data.player_id, parseInt(data.bet));
     io.emit('updatePlayerInfo', player);
+    io.emit('updatePot', pot);
     //player.subtotal_bet = data.bet;
     //should validate players account balance, betting amount
     //or we calculate and send options with possible maximum one can bet
@@ -339,6 +344,7 @@ io.on('connection', function (socket) {
         updatePlayerStatus(player.player_id, 'allIn');
         socket.broadcast.emit('showFaceDownCards', player);
       }
+      //if next is only active player, send call and fold option
       sendToPlayer(socketToPlayerMap, next);
     }
   });
@@ -354,6 +360,8 @@ io.on('connection', function (socket) {
     player = getIdPlayer(parseInt(data.player_id));
     updatePlayerBet(data.player_id, parseInt(data.bet));
     io.emit('updatePlayerInfo', player);
+    io.emit('updatePot', pot);
+    socket.broadcast.emit('showFaceDownCards', player);
 
     next = getNextPlayer(getIdPlayer(player.player_id));
     updatePlayerStatus(player.player_id, 'allIn');
@@ -362,7 +370,7 @@ io.on('connection', function (socket) {
       while (gameStage != 'river') {
         dealCommunityCards();
       }
-      handleShowDown();
+      handleShowDown(io);
     } else {
       sendToPlayer(socketToPlayerMap, next);
     }
@@ -422,7 +430,7 @@ function dealCommunityCards() {
   }
 }
 
-function handleShowDown() {
+function handleShowDown(io) {
   //loop through active players:
   //analyze hands of each player, best 5 cards of carda, cardb, plus community cards
   //compare hands
@@ -446,6 +454,9 @@ function handleShowDown() {
       playerList[i].hand = playerHand;
       activePlayers.push(playerList[i]);
     }
+    if (playerList[i].status == 'active') {
+      io.emit('showFaceDownCards', playerList[i]);
+    }
   }
   //sortedPlayers = sortHandByCardType(playerList);
   //winners = getWinners(sortedPlayers);
@@ -454,37 +465,74 @@ function handleShowDown() {
   foldedPlayers = getStatusPlayers('folded');
   rankedPlayers = getRankedPlayers(activePlayers);
   distributeChips(rankedPlayers, foldedPlayers);
-  sendToPlayerResult(rankedPlayers);
-  sendToPlayerResult(foldedPlayers);
-  rebalanceBankroll(rankedPlayers);
+  sendToPlayerResult(activePlayers, io);
+  //rebalanceBankroll(rankedPlayers);
 
-  console.log(rankedPlayers);
-  console.log(foldedPlayers);
+  // sendToPlayerResult(rankedPlayers);
+  // sendToPlayerResult(foldedPlayers);
+  console.log('got run first?');
+  //console.log(rankedPlayers);
+  //console.log(foldedPlayers);
   //new game
+}
+
+function afterLog(rankedPlayers) {
+  console.log(rankedPlayers);
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function sendToPlayerResult(activePlayers, io) {
+  each = deadBet / activePlayers.length; //split the dead chips
+  for (let i = 0; i < activePlayers.length; i++) {
+    activePlayers[i].chips += each;
+    if (activePlayers[i].chips != 0) {
+      io.emit('showResult', activePlayers[i]);
+      activePlayers[i].bankroll += activePlayers[i].chips;
+      pot -= activePlayers[i].chips;
+      activePlayers[i].chips = 0;
+      io.emit('updatePlayerInfo', activePlayers[i]);
+      io.emit('updatePot', pot);
+      await sleep(3000);
+      io.emit('removeCardHighLight', activePlayers[i]);
+      await sleep(1000);
+    }
+  }
+  //cb(activePlayers)
+  console.log(rankedPlayers);
+  restartGame(io);
+}
+
+async function restartGame(io) {
+  //clearBoard();
+  await sleep(1000);
+  startGame(io);
 }
 // for each player including inactive, broadcast player info(win, lose, bankroll info for palyer himself)
 //FIX: send active player list to every player using one event?{players: activePlayers, client: player}
-function sendToPlayerResult(activePlayer) {
-  socketToPlayerMap.forEach((value, key, map) => {
-    activePlayer.forEach((e) => {
-      if (value.player_id == e.player_id) {
-        if (e.chips > 0) {
-          io.to(key).emit('playerOwnWinMsg', e);
-        } else {
-          io.to(key).emit('playerOwnLoseMsg', e);
-        }
-      } else {
-        if (e.chips > 0) {
-          //io.to(key).emit('generalWinMsg', e ); should be enough just send the activePlayer e
-          io.to(key).emit('generalWinMsg', { player: value, winner: e });
-        } else {
-          //io.to(key).emit('generalWinMsg', e );
-          io.to(key).emit('generalLoseMsg', { player: value, winner: e });
-        }
-      }
-    });
-  });
-}
+// function sendToPlayerResult(activePlayer) {
+//   socketToPlayerMap.forEach((value, key, map) => {
+//     activePlayer.forEach((e) => {
+//       if (value.player_id == e.player_id) {
+//         if (e.chips > 0) {
+//           io.to(key).emit('playerOwnWinMsg', e);
+//         } else {
+//           io.to(key).emit('playerOwnLoseMsg', e);
+//         }
+//       } else {
+//         if (e.chips > 0) {
+//           //io.to(key).emit('generalWinMsg', e ); should be enough just send the activePlayer e
+//           io.to(key).emit('generalWinMsg', { player: value, winner: e });
+//         } else {
+//           //io.to(key).emit('generalWinMsg', e );
+//           io.to(key).emit('generalLoseMsg', { player: value, winner: e });
+//         }
+//       }
+//     });
+//   });
+// }
 
 function sortHandByCardType(pList) {
   pList.sort((a, b) => {
@@ -521,11 +569,17 @@ function sendToPlayer(socket_player, aPlayer) {
         if (aPlayer.minToCall == aPlayer.bankroll) {
           io.to(key).emit('options3', aPlayer); //options3 : fold, all in
         } else {
-          io.to(key).emit('options1', aPlayer); //options1 : fold, raise, call
+          if (getStatusPlayers('active').length == 1) {
+            //option4 : fold, call
+            io.to(key).emit('options4', aPlayer);
+          } else {
+            io.to(key).emit('options1', aPlayer); //options1 : fold, raise, call
+          }
         }
       } else {
         io.to(key).emit('options2', aPlayer); //options2 : fold, raise, check
       }
+      io.emit('highLightPlayer', { player: aPlayer, allPlayers: playerList });
       console.log('players info : ' + JSON.stringify(aPlayer));
     }
   });
@@ -560,6 +614,9 @@ function updatePlayerSubtotalBet(id, jVal) {
 
 // jVal is the delta to call
 function updatePlayerBet(id, jVal) {
+  //update pot
+  pot += jVal;
+
   for (var i = 0; i < playerList.length; i++) {
     if (playerList[i].player_id == id) {
       playerList[i].subtotal_bet = playerList[i].subtotal_bet + jVal;
@@ -627,13 +684,15 @@ function getPlayers(jTag, jVal) {
   return findedPlayers;
 }
 
-function startGame(socket, io) {
+function startGame( io) {
   if (playerList.length > 1) {
     //set player to active before settting isGameOn, because there might be waitting players in the list
     for (var i = 0; i < playerList.length; i++) {
       playerList[i].status = 'active';
       playerList[i].subtotal_bet = 0;
       playerList[i].total_bet = 0;
+      playerList[i].chips = 0;
+
       //reset totalBet to 0?
     }
     isGameOn = true; //after this, the new joined players will be in inactive
@@ -643,6 +702,9 @@ function startGame(socket, io) {
     river = '';
     communityCards = [];
     deadBet = 0;
+    pot = 0;
+
+    io.emit('updateDefault', playerList);
 
     button = getButtonPlayer(); // possible to change to async function
     console.log('button player id is: ' + button.player_id);
@@ -662,7 +724,7 @@ function startGame(socket, io) {
     sendToPlayer(socketToPlayerMap, next);
   } else {
     console.log('waiting for other players to start game.');
-    socket.emit('message2', 'only one player now.');
+    //socket.emit('message2', 'only one player now.');
   }
 }
 
@@ -673,6 +735,8 @@ function dealHoleCards() {
   updatePlayerRole(small.player_id, 'small');
   updatePlayerBet(small.player_id, 10); //hardcoded small blind 10
   io.emit('updatePlayerInfo', small);
+  io.emit('updatePot', pot);
+  io.emit('updateSmallBlind', small);
   //updatePlayer(small.player_id, '', '');
   updatePlayerHoleCards(small);
   console.log('cards deck length is ' + cards.length);
@@ -683,6 +747,9 @@ function dealHoleCards() {
   //updatePlayer(next.player_id, '', '');
   updatePlayerBet(big.player_id, 20); //hardcoded big blind 20
   io.emit('updatePlayerInfo', big);
+  io.emit('updatePot', pot);
+  io.emit('updateBigBlind', big);
+
   updatePlayerHoleCards(big);
   console.log('cards deck length is ' + cards.length);
   console.log('big json: ' + JSON.stringify(big));
@@ -768,7 +835,8 @@ function Player(
   cardb,
   status,
   total_bet,
-  subtotal_bet
+  subtotal_bet,
+  chips
 ) {
   this.player_id = playerId; //seating position
   this.name = name;
@@ -777,8 +845,9 @@ function Player(
   this.carda = carda;
   this.cardb = cardb;
   this.status = status; //active: playing, inactive: seated but not playing(player who folded, new player joined in but game is already on)
-  this.total_bet = total_bet;
-  this.subtotal_bet = subtotal_bet;
+  this.total_bet = total_bet; //total bet each game
+  this.subtotal_bet = subtotal_bet; //bet each round
+  this.chips = chips; //winning chips to collect
 }
 
 function makeDeck() {
