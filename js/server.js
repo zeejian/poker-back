@@ -151,7 +151,7 @@ io.on('connection', function (socket) {
     //io.emit('updatePlayerInfo', onePlayer);
 
     if (!isGameOn) {
-      startGame( io);
+      startGame();
     } else {
       console.log('waiting for this round finish.');
     }
@@ -185,7 +185,7 @@ io.on('connection', function (socket) {
       console.log('this round ended.');
       isGameOn = false;
       if (!isGameOn) {
-        startGame( io);
+        restartGame();
       } else {
         //could it be 'fold' is hit but new game is started by new joined players
         console.log('new players are in.');
@@ -430,7 +430,7 @@ function dealCommunityCards() {
   }
 }
 
-function handleShowDown(io) {
+function handleShowDown() {
   //loop through active players:
   //analyze hands of each player, best 5 cards of carda, cardb, plus community cards
   //compare hands
@@ -465,30 +465,20 @@ function handleShowDown(io) {
   foldedPlayers = getStatusPlayers('folded');
   rankedPlayers = getRankedPlayers(activePlayers);
   distributeChips(rankedPlayers, foldedPlayers);
-  sendToPlayerResult(activePlayers, io);
-  //rebalanceBankroll(rankedPlayers);
-
-  // sendToPlayerResult(rankedPlayers);
-  // sendToPlayerResult(foldedPlayers);
+  showDownAndRestart(activePlayers);
   console.log('got run first?');
-  //console.log(rankedPlayers);
-  //console.log(foldedPlayers);
-  //new game
-}
-
-function afterLog(rankedPlayers) {
-  console.log(rankedPlayers);
 }
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function sendToPlayerResult(activePlayers, io) {
+async function showDownAndRestart(activePlayers) {
   each = deadBet / activePlayers.length; //split the dead chips
   for (let i = 0; i < activePlayers.length; i++) {
     activePlayers[i].chips += each;
     if (activePlayers[i].chips != 0) {
+      await sleep(1000);
       io.emit('showResult', activePlayers[i]);
       activePlayers[i].bankroll += activePlayers[i].chips;
       pot -= activePlayers[i].chips;
@@ -500,39 +490,16 @@ async function sendToPlayerResult(activePlayers, io) {
       await sleep(1000);
     }
   }
-  //cb(activePlayers)
+
   console.log(rankedPlayers);
-  restartGame(io);
+  restartGame();
 }
 
-async function restartGame(io) {
-  //clearBoard();
+async function restartGame() {
+  io.emit('updateDefault', playerList); // clear board
   await sleep(1000);
-  startGame(io);
+  startGame();
 }
-// for each player including inactive, broadcast player info(win, lose, bankroll info for palyer himself)
-//FIX: send active player list to every player using one event?{players: activePlayers, client: player}
-// function sendToPlayerResult(activePlayer) {
-//   socketToPlayerMap.forEach((value, key, map) => {
-//     activePlayer.forEach((e) => {
-//       if (value.player_id == e.player_id) {
-//         if (e.chips > 0) {
-//           io.to(key).emit('playerOwnWinMsg', e);
-//         } else {
-//           io.to(key).emit('playerOwnLoseMsg', e);
-//         }
-//       } else {
-//         if (e.chips > 0) {
-//           //io.to(key).emit('generalWinMsg', e ); should be enough just send the activePlayer e
-//           io.to(key).emit('generalWinMsg', { player: value, winner: e });
-//         } else {
-//           //io.to(key).emit('generalWinMsg', e );
-//           io.to(key).emit('generalLoseMsg', { player: value, winner: e });
-//         }
-//       }
-//     });
-//   });
-// }
 
 function sortHandByCardType(pList) {
   pList.sort((a, b) => {
@@ -684,7 +651,7 @@ function getPlayers(jTag, jVal) {
   return findedPlayers;
 }
 
-function startGame( io) {
+async function startGame() {
   if (playerList.length > 1) {
     //set player to active before settting isGameOn, because there might be waitting players in the list
     for (var i = 0; i < playerList.length; i++) {
@@ -692,6 +659,7 @@ function startGame( io) {
       playerList[i].subtotal_bet = 0;
       playerList[i].total_bet = 0;
       playerList[i].chips = 0;
+      playerList[i].hasChecked = false;
 
       //reset totalBet to 0?
     }
@@ -704,20 +672,47 @@ function startGame( io) {
     deadBet = 0;
     pot = 0;
 
-    io.emit('updateDefault', playerList);
+    //io.emit('updateDefault', playerList); // clear board
+    //await sleep(1000);
 
     button = getButtonPlayer(); // possible to change to async function
     console.log('button player id is: ' + button.player_id);
-    dealHoleCards();
+    io.emit('updateButton', button);
+    updatePlayerHandCards();
+    await sleep(1000);
+    for (var i = 0; i < 2; i++) {
+      var p = button;
+      while (getNextPlayer(p).player_id != button.player_id) {
+        p = getNextPlayer(p);
+        socketToPlayerMap.forEach((value, key, map) => {
+          if (value.player_id == p.player_id) {
+            io.to(key).emit('faceUpCard' + i, {
+              player: p,
+            });
+          } else {
+            io.to(key).emit('faceDownCard' + i, {
+              player: p,
+            });
+          }
+        });
+        await sleep(1000);
+      }
 
-    socketToPlayerMap.forEach((value, key, map) => {
-      console.log('send according to key: ' + key);
-      io.to(key).emit('faceDownCards', {
-        player: value,
-        allPlayers: playerList,
+      socketToPlayerMap.forEach((value, key, map) => {
+        if (value.player_id == button.player_id) {
+          io.to(key).emit('faceUpCard' + i, {
+            player: button,
+          });
+        } else {
+          io.to(key).emit('faceDownCard' + i, {
+            player: button,
+            //   other: playerList,
+          });
+        }
       });
-      io.emit('updateButton', value);
-    });
+      await sleep(1000);
+    }
+
     next = getNextPlayer(big);
     console.log('sending to next player of big blind: ' + JSON.stringify(next));
     //fold card round, from next player of big blind to big blind
@@ -728,8 +723,25 @@ function startGame( io) {
   }
 }
 
+async function dealFaceDownCards(io, button) {
+  for (var i = 0; i < 2; i++) {
+    var p = button;
+    while (getNextPlayer(p).player_id != button.player_id) {
+      p = getNextPlayer(p);
+      io.emit('faceDownCard' + i, { player: p, other: playerList });
+      await sleep(5000);
+      io.emit('faceDownCards' + i, { player: p, other: playerList });
+      await sleep(5000);
+    }
+    io.emit('faceDownCard' + i, { player: button, other: playerList });
+    await sleep(5000);
+    io.emit('faceDownCard' + i, { player: button, other: playerList });
+    await sleep(5000);
+  }
+}
+
 //this function will send back the hole cards response to client
-function dealHoleCards() {
+function updatePlayerHandCards() {
   makeDeck();
   small = getNextPlayer(button);
   updatePlayerRole(small.player_id, 'small');

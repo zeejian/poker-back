@@ -132,14 +132,14 @@ socket.on('updatePot', function (pot) {
 
 socket.on('updateDefault', function (players) {
   players.forEach((p) => {
-    if ((p.status = 'active')) {
-      document.getElementById('small' + p.player_id).style.display = 'none';
-      document.getElementById('big' + p.player_id).style.display = 'none';
-      document.getElementById('button' + p.player_id).style.display = 'none';
-      //FIX: clear hand cards
-      document.getElementById('img' + p.player_id + 'a').hidden = true;
-      document.getElementById('img' + p.player_id + 'b').hidden = true;
-    }
+    //if ((p.status = 'active')) {
+    document.getElementById('small' + p.player_id).style.display = 'none';
+    document.getElementById('big' + p.player_id).style.display = 'none';
+    document.getElementById('button' + p.player_id).style.display = 'none';
+    //FIX: clear hand cards
+    document.getElementById('img' + p.player_id + 'a').style.display = 'none';
+    document.getElementById('img' + p.player_id + 'b').style.display = 'none';
+    //}
   });
 
   document.getElementById('imgFlopCard0').style.display = 'none';
@@ -601,53 +601,57 @@ function updatePlayerSeat(seatId) {
   }
 }
 
-socket.on('faceDownCards', function (playerObj) {
-  console.log('the client receives player list: ' + playerObj.player);
-  console.log('the client receives player carda: ' + playerObj.player.carda);
+socket.on('faceUpCard0', function (playerObj) {
+  console.log('face up event a, player id:' + playerObj.player.player_id);
+
+  document.getElementById(
+    'img' + playerObj.player.player_id + 'a'
+  ).style.display = '';
   document.getElementById(
     'img' + playerObj.player.player_id + 'a'
   ).src = internal_GetCardImageUrl(playerObj.player.carda);
-  document.getElementById('img' + playerObj.player.player_id + 'a').value =
-    playerObj.player.carda;
+
   document.getElementById('img' + playerObj.player.player_id + 'a').width = 50;
   document.getElementById('img' + playerObj.player.player_id + 'a').height = 65;
+});
+socket.on('faceUpCard1', function (playerObj) {
+  console.log('face up event b');
+
+  document.getElementById(
+    'img' + playerObj.player.player_id + 'b'
+  ).style.display = '';
   document.getElementById(
     'img' + playerObj.player.player_id + 'b'
   ).src = internal_GetCardImageUrl(playerObj.player.cardb);
-  document.getElementById('img' + playerObj.player.player_id + 'b').value =
-    playerObj.player.cardb;
+
   document.getElementById('img' + playerObj.player.player_id + 'b').width = 50;
   document.getElementById('img' + playerObj.player.player_id + 'b').height = 65;
-  for (var i = 0; i < playerObj.allPlayers.length; i++) {
-    if (playerObj.allPlayers[i].status == 'active') {
-      if (playerObj.allPlayers[i].player_id != playerObj.player.player_id) {
-        document.getElementById(
-          'img' + playerObj.allPlayers[i].player_id + 'a'
-        ).src = 'images/cardback.png';
-        document.getElementById(
-          'img' + playerObj.allPlayers[i].player_id + 'a'
-        ).width = 50;
-        document.getElementById(
-          'img' + playerObj.allPlayers[i].player_id + 'a'
-        ).height = 65;
-        document.getElementById(
-          'img' + playerObj.allPlayers[i].player_id + 'b'
-        ).src = 'images/cardback.png';
-        document.getElementById(
-          'img' + playerObj.allPlayers[i].player_id + 'b'
-        ).width = 50;
-        document.getElementById(
-          'img' + playerObj.allPlayers[i].player_id + 'b'
-        ).height = 65;
-      }
-    }
-  }
+});
 
-  document.getElementById('imgFlopCard0').hidden = 'hidden';
-  document.getElementById('imgFlopCard1').hidden = 'hidden';
-  document.getElementById('imgFlopCard2').hidden = 'hidden';
-  document.getElementById('imgTurnCard').hidden = 'hidden';
-  document.getElementById('imgRiverCard').hidden = 'hidden';
+socket.on('faceDownCard0', function (playerObj) {
+  console.log('face down event a, player id:' + playerObj.player.player_id);
+
+  document.getElementById(
+    'img' + playerObj.player.player_id + 'a'
+  ).style.display = '';
+  document.getElementById('img' + playerObj.player.player_id + 'a').src =
+    'images/cardback.png';
+
+  document.getElementById('img' + playerObj.player.player_id + 'a').width = 50;
+  document.getElementById('img' + playerObj.player.player_id + 'a').height = 65;
+});
+
+socket.on('faceDownCard1', function (playerObj) {
+  console.log('face down event b');
+
+  document.getElementById(
+    'img' + playerObj.player.player_id + 'b'
+  ).style.display = '';
+  document.getElementById('img' + playerObj.player.player_id + 'b').src =
+    'images/cardback.png';
+
+  document.getElementById('img' + playerObj.player.player_id + 'b').width = 50;
+  document.getElementById('img' + playerObj.player.player_id + 'b').height = 65;
 });
 
 socket.on('showFaceDownCards', function (player) {
