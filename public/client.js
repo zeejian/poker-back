@@ -194,6 +194,25 @@ socket.on('highLightPlayer', function (playerObj) {
   });
 });
 
+socket.on('foldCards', function (player) {
+  document.getElementById('img' + player.player_id + 'a').style.display =
+    'none';
+  document.getElementById('img' + player.player_id + 'b').style.display =
+    'none';
+  document.getElementById('playerSeat' + player.player_id).style =
+    'filter:grayscale(100%);';
+});
+
+socket.on('removePlayerHighlight', function (players) {
+  console.log('remove highLight player' + JSON.stringify(players));
+  players.forEach((e) => {
+    console.log(document.getElementById('playerSeat' + e.player_id).style);
+    if (document.getElementById('playerSeat' + e.player_id).style != '') {
+      document.getElementById('playerSeat' + e.player_id).style = '';
+    }
+  });
+});
+
 socket.on('options1', function (player) {
   id = player.player_id;
   console.log('the client receives player id: ' + id);

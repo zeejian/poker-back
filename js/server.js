@@ -171,6 +171,10 @@ io.on('connection', function (socket) {
     //reset subtotal_bet, hasChecked!
 
     socket.emit('foldMsg', data.player_id);
+    foldedPlayers = [];
+    foldedPlayers.push(data);
+    io.emit('removePlayerHighlight', foldedPlayers);
+    io.emit('foldCards', data);
     //fold the card as well?
 
     if (nrOfactivePlayers < 2) {
@@ -180,6 +184,7 @@ io.on('connection', function (socket) {
       collectChips(next, getStatusPlayers('folded'));
       io.emit('updatePlayerInfo', next);
       io.emit('updatePot', pot);
+      io.emit('removePlayerHighlight', playerList);
 
       //wait for seconds to start new round
       console.log('this round ended.');
@@ -220,7 +225,7 @@ io.on('connection', function (socket) {
         while (gameStage != 'river') {
           dealCommunityCards();
         }
-        handleShowDown(io);
+        handleShowDown();
       }
 
       if (next.subtotal_bet == highestBet) {
@@ -243,7 +248,7 @@ io.on('connection', function (socket) {
             button = getRolePlayers('button')[0];
             sendToPlayer(socketToPlayerMap, getNextPlayer(button));
           } else {
-            handleShowDown(io);
+            handleShowDown();
             gameStage = 'preFlop';
           }
         } else {
@@ -283,7 +288,7 @@ io.on('connection', function (socket) {
           button = getRolePlayers('button')[0];
           sendToPlayer(socketToPlayerMap, getNextPlayer(button)); //dont send call option
         } else {
-          handleShowDown(io);
+          handleShowDown();
           gameStage = 'preFlop';
         }
       } else {
@@ -458,6 +463,8 @@ function handleShowDown() {
       io.emit('showFaceDownCards', playerList[i]);
     }
   }
+
+  io.emit('removePlayerHighlight', playerList);
   //sortedPlayers = sortHandByCardType(playerList);
   //winners = getWinners(sortedPlayers);
 
@@ -510,17 +517,15 @@ function sortHandByCardType(pList) {
 
 //module.exports ={server}
 function sendToAllPlayers(cards) {
-  socketToPlayerMap.forEach((value, key, map) => {
-    if (cards.cardType == 'flop') {
-      io.to(key).emit('layFlopCards', cards.card);
-    } else if (cards.cardType == 'turn') {
-      io.to(key).emit('layTurnCard', cards.card);
-    } else if (cards.cardType == 'river') {
-      io.to(key).emit('layRiverCard', cards.card);
-    } else {
-      console.log('do not know what to send.');
-    }
-  });
+  if (cards.cardType == 'flop') {
+    io.emit('layFlopCards', cards.card);
+  } else if (cards.cardType == 'turn') {
+    io.emit('layTurnCard', cards.card);
+  } else if (cards.cardType == 'river') {
+    io.emit('layRiverCard', cards.card);
+  } else {
+    console.log('do not know what to send.');
+  }
 }
 
 function sendToPlayer(socket_player, aPlayer) {
