@@ -171,30 +171,15 @@ io.on('connection', function (socket) {
     //reset subtotal_bet, hasChecked!
 
     socket.emit('foldMsg', data.player_id);
-    foldedPlayers = [];
-    foldedPlayers.push(data);
-    io.emit('removePlayerHighlight', foldedPlayers);
+
+    io.emit('removePlayerHighlight', [data]);
     io.emit('foldCards', data);
-    //fold the card as well?
 
     if (nrOfactivePlayers < 2) {
       //winner takes the pot
       next = getNextPlayer(data);
-      next.bankroll += next.total_bet;
-      collectChips(next, getStatusPlayers('folded'));
-      io.emit('updatePlayerInfo', next);
-      io.emit('updatePot', pot);
-      io.emit('removePlayerHighlight', playerList);
 
-      //wait for seconds to start new round
-      console.log('this round ended.');
-      isGameOn = false;
-      if (!isGameOn) {
-        restartGame();
-      } else {
-        //could it be 'fold' is hit but new game is started by new joined players
-        console.log('new players are in.');
-      }
+      handleNoShowDown(next);
     } else {
       // prompt next player
       console.log('this round continues.');
@@ -434,7 +419,26 @@ function dealCommunityCards() {
     alert('unknown game stage.');
   }
 }
+async function handleNoShowDown(player) {
+  player.bankroll += player.total_bet;
+  collectChips(player, getStatusPlayers('folded'));
+  io.emit('updatePlayerInfo', player);
+  io.emit('updatePot', pot);
+ // io.emit('removePlayerHighlight', playerList);
 
+  io.emit('showNoShowDownWinner', player);
+  await sleep(2000);
+  io.emit('removePlayerHighlight', playerList);
+  //wait for seconds to start new round
+  console.log('this round ended.');
+  isGameOn = false;
+  if (!isGameOn) {
+    restartGame();
+  } else {
+    //could it be 'fold' is hit but new game is started by new joined players
+    console.log('new players are in.');
+  }
+}
 function handleShowDown() {
   //loop through active players:
   //analyze hands of each player, best 5 cards of carda, cardb, plus community cards
@@ -494,6 +498,7 @@ async function showDownAndRestart(activePlayers) {
       io.emit('updatePot', pot);
       await sleep(3000);
       io.emit('removeCardHighLight', activePlayers[i]);
+      io.emit('removePlayerHighlight', [activePlayers[i]]);
       await sleep(1000);
     }
   }

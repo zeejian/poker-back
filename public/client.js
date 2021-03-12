@@ -44,6 +44,10 @@ socket.on('updateOtherPlayers', function (player) {
     player.bankroll;
 });
 
+socket.on('showNoShowDownWinner', function (player) {
+  document.getElementById('playerSeat' + player.player_id).style =
+    'transform: scale(1.2);transition: transform 1.9s;margin: 0 auto;box-shadow: rgb(241 234 8) 0px 0px 30px;';
+});
 socket.on('showResult', function (player) {
   flop0 = document.getElementById('imgFlopCard0');
   flop1 = document.getElementById('imgFlopCard1');
@@ -79,6 +83,9 @@ socket.on('showResult', function (player) {
       alert('did not find card:' + e);
     }
   });
+
+  document.getElementById('playerSeat' + player.player_id).style =
+    'transform: scale(1.2);transition: transform 1.9s;margin: 0 auto;box-shadow: rgb(241 234 8) 0px 0px 30px;';
 });
 
 socket.on('removeCardHighLight', function (player) {
@@ -195,6 +202,7 @@ socket.on('highLightPlayer', function (playerObj) {
 });
 
 socket.on('foldCards', function (player) {
+  console.log('fold card from player:' + player.player_id);
   document.getElementById('img' + player.player_id + 'a').style.display =
     'none';
   document.getElementById('img' + player.player_id + 'b').style.display =
