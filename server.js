@@ -815,7 +815,7 @@ function getNextPlayer(player) {
 function drawCards(nrOfCards) {
   outCards = [];
   for (var i = 0; i < nrOfCards; i++) {
-    index = getRandomCardIndex();
+    let index = getRandomCardIndex();
     outCards.push(cards[index]);
     cards.splice(index, 1);
   }
