@@ -11,6 +11,9 @@ const io = require('socket.io')(server, {
 const cors = require('cors');
 const port = process.env.PORT || 9000;
 const index = require('./routes/index');
+const getAnalyzedHand = require('./js/hand').getAnalyzedHand;
+const getRankedPlayers = require('./js/hand').getRankedPlayers;
+const distributeChips = require('./js/hand').distributeChips;
 
 app.use(cors());
 app.use(index);
@@ -453,7 +456,7 @@ function handleShowDown() {
       });
       console.log(cardset);
       //sort cardset from big to small
-      playerHand = getAnalyzedHand(cardset);
+      let playerHand = getAnalyzedHand(cardset);
       playerList[i].hand = playerHand;
       activePlayers.push(playerList[i]);
     }
