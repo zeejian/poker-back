@@ -159,7 +159,8 @@ io.on('connection', function (socket) {
     // if playerList length is less 3, start over; otherwise deregister the player(reset status)
 
     console.log('player with id: ' + data.player_id + ' folded.');
-    updatePlayerStatus(parseInt(data.player_id), 'folded'); // instroduce new state 'folded'
+    player = getIdPlayer(parseInt(data.player_id));
+    updatePlayerStatus(player.player_id, 'folded'); // instroduce new state 'folded'
 
     //updatePlayerSubtotalBet(parseInt(data.player_id), 0);
     nrOfactivePlayers = getStatusPlayers('active').length;
@@ -167,14 +168,14 @@ io.on('connection', function (socket) {
 
     //reset subtotal_bet, hasChecked!
 
-    socket.emit('foldMsg', data.player_id);
+    socket.emit('foldMsg', player.player_id);
 
-    io.emit('removePlayerHighlight', [data]);
-    io.emit('foldCards', data);
+    io.emit('removePlayerHighlight', [player]);
+    io.emit('foldCards', player);
 
     if (nrOfactivePlayers < 2) {
       //winner takes the pot
-      next = getNextPlayer(data);
+      next = getNextPlayer(player);
 
       handleNoShowDown(next);
     } else {
@@ -314,7 +315,7 @@ io.on('connection', function (socket) {
     //socket.emit('raiseMsg', data.player_id);
 
     player = getIdPlayer(parseInt(data.player_id));
-    updatePlayerBet(data.player_id, parseInt(data.bet));
+    updatePlayerBet(player.player_id, parseInt(data.bet));
     io.emit('updatePlayerInfo', player);
     io.emit('updatePot', pot);
     //player.subtotal_bet = data.bet;
@@ -345,7 +346,7 @@ io.on('connection', function (socket) {
     );
 
     player = getIdPlayer(parseInt(data.player_id));
-    updatePlayerBet(data.player_id, parseInt(data.bet));
+    updatePlayerBet(player.player_id, parseInt(data.bet));
     io.emit('updatePlayerInfo', player);
     io.emit('updatePot', pot);
     socket.broadcast.emit('showFaceDownCards', player);
@@ -424,8 +425,9 @@ async function handleNoShowDown(player) {
  // io.emit('removePlayerHighlight', playerList);
 
   io.emit('showNoShowDownWinner', player);
-  await sleep(2000);
+  await sleep(10000);
   io.emit('removePlayerHighlight', playerList);
+  await sleep(10000);
   //wait for seconds to start new round
   console.log('this round ended.');
   isGameOn = false;
