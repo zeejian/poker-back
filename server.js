@@ -35,7 +35,6 @@ var turn = '';
 var river = '';
 var gameStage; //enum: preFlop, flop, turn, river
 
-
 let interval;
 
 // io.on("connection", (socket) => {
@@ -114,11 +113,16 @@ io.on('connection', function (socket) {
 
   //console.log('new player opens a browser window');
   socket.on('joinGameEvent', function (data) {
-    console.log('A client sent us this dumb message:', data.player_id);
+    console.log('A client sent us this dumb message:', JSON.stringify(data));
+    //FIX:
+    // fetch data from DB, and compare.
+    //if first time user, insert
+    //otherwise update 'player' with bankroll from
 
     onePlayer = new Player(
       parseInt(data.player_id),
-      '',
+      data.player_name,
+      data.player_icon,
       '',
       100,
       '',
@@ -422,7 +426,7 @@ async function handleNoShowDown(player) {
   collectChips(player, getStatusPlayers('folded'));
   io.emit('updatePlayerInfo', player);
   io.emit('updatePot', pot);
- // io.emit('removePlayerHighlight', playerList);
+  // io.emit('removePlayerHighlight', playerList);
 
   io.emit('showNoShowDownWinner', player);
   await sleep(10000);
@@ -850,6 +854,7 @@ function randomIntFromInterval(min, max) {
 function Player(
   playerId,
   name,
+  avatar,
   role,
   bankroll,
   carda,
@@ -861,6 +866,7 @@ function Player(
 ) {
   this.player_id = playerId; //seating position
   this.name = name;
+  this.avatar = avatar;
   this.role = role; // small, big, button
   this.bankroll = bankroll;
   this.carda = carda;
