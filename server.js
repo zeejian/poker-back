@@ -90,14 +90,10 @@ io.on('connection', function (socket) {
       //if playerList length is 2, deregister the player, restart the game
       deadBet += player.total_bet;
       if (playerList.length <= 2) {
-        deRegisterPlayer(player, socket);
-        isGameOn = false;
-        gameStage = 'preFlop';
-        flop = [];
-        turn = '';
-        river = '';
-        communityCards = [];
-        deadBet = 0;
+        handleLeftPlayer(player, socket);
+
+       // deRegisterPlayer(player, socket);
+
         //clearBoard()
       } else {
         if (player.hasToken) {
@@ -370,6 +366,37 @@ io.on('connection', function (socket) {
 });
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
+async function handleLeftPlayer(player, socket) {
+  winner = getNextPlayer(player);
+  winner.bankroll += pot;
+  console.log("deadBet is " + deadBet+ ",winner bankroll is "+winner.bankroll);
+  io.emit('updatePlayerInfo', winner);
+  io.emit('updatePot', 0);
+  // io.emit('removePlayerHighlight', playerList);
+
+  //await sleep(10000);
+  io.emit('removePlayerHighlight', playerList);
+  io.emit('showNoShowDownWinner', winner);
+  await sleep(5000);
+  io.emit('updateDefault', playerList);
+  io.emit('hidePlayerOption');
+  io.emit('hideAccountInfo', player);
+  io.emit('removePlayerHighlight', winner);
+  await sleep(5000);
+  //wait for seconds to start new round
+  deRegisterPlayer(player, socket);
+  console.log('this round ended.');
+
+  isGameOn = false;
+  gameStage = 'preFlop';
+  flop = [];
+  turn = '';
+  river = '';
+  communityCards = [];
+  deadBet = 0;
+  pot = 0
+}
+
 function deRegisterPlayer(player, socket) {
   const index = playerList.indexOf(player);
   if (index > -1) {
