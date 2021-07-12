@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
 const server = require('http').Server(app);
+const { Pool } = require('pg');
 //const io = require('socket.io')(server);
 const io = require('socket.io')(server, {
   cors: {
@@ -34,6 +35,14 @@ var flop = [];
 var turn = '';
 var river = '';
 var gameStage; //enum: preFlop, flop, turn, river
+
+const pool = new Pool({
+  user: 'postgres',
+  host: 'localhost',
+  database: 'test',
+  password: '123',
+  port: 5432,
+});
 
 let interval;
 
@@ -92,7 +101,7 @@ io.on('connection', function (socket) {
       if (playerList.length <= 2) {
         handleLeftPlayer(player, socket);
 
-       // deRegisterPlayer(player, socket);
+        // deRegisterPlayer(player, socket);
 
         //clearBoard()
       } else {
@@ -110,48 +119,7 @@ io.on('connection', function (socket) {
   //console.log('new player opens a browser window');
   socket.on('joinGameEvent', function (data) {
     console.log('A client sent us this dumb message:', JSON.stringify(data));
-    //FIX:
-    // fetch data from DB, and compare.
-    //if first time user, insert
-    //otherwise update 'player' with bankroll from
-
-    onePlayer = new Player(
-      parseInt(data.player_id),
-      data.player_name,
-      data.player_icon,
-      '',
-      100,
-      '',
-      '',
-      'inactive',
-      0,
-      0,
-      0
-    );
-    playerList.push(onePlayer);
-    socketToPlayerMap.set(socket.id, onePlayer);
-
-    // if (flop.length == 3) {
-    //   io.to(socket.id).emit('layFlopCards', flop);
-    // }
-    // if (turn != '') {
-    //   io.to(socket.id).emit('layTurnCard', turn);
-    // }
-    // if (river != '') {
-    //   io.to(socket.id).emit('layRiverCard', river);
-    // }
-
-    //wait for 1 second, if gameNotOn(if playerList>1, start game, otherwise only wait for other players), else do nothing.
-    socket.broadcast.emit('playerSeated', onePlayer);
-    socket.emit('updateMainPlayer', onePlayer);
-    socket.broadcast.emit('updateOtherPlayers', onePlayer);
-    //io.emit('updatePlayerInfo', onePlayer);
-
-    if (!isGameOn) {
-      startGame();
-    } else {
-      console.log('waiting for this round finish.');
-    }
+    handleJoinGame(data, socket);
   });
 
   socket.on('playerActionFold', function (data) {
@@ -366,10 +334,129 @@ io.on('connection', function (socket) {
 });
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
+
+async function fetchPlayerInfo(data, socket){
+  console.log('input data:'+JSON.stringify(data))
+  //FIX:
+  // fetch data from DB, and compare.
+  //if first time user, insert
+  //otherwise update 'player' with bankroll from
+
+  let onePlayer = new Player(
+    //parseInt(data.player_id),
+    data.player_id === '' ? parseInt(data.pos_id) : parseInt(data.player_id),
+    data.pos_id,
+    data.player_name,
+    data.player_icon,
+    '',
+    500,
+    '',
+    '',
+    'inactive',
+    0,
+    0,
+    0
+  );
+
+  if (data.player_id !== '') { // if not quick start player
+    onePlayer = await initPlayer(data).catch((e) => console.error(e.stack));
+  } 
+
+  playerList.push(onePlayer);
+  socketToPlayerMap.set(socket.id, onePlayer);
+
+  // if (flop.length == 3) {
+  //   io.to(socket.id).emit('layFlopCards', flop);
+  // }
+  // if (turn != '') {
+  //   io.to(socket.id).emit('layTurnCard', turn);
+  // }
+  // if (river != '') {
+  //   io.to(socket.id).emit('layRiverCard', river);
+  // }
+
+  //wait for 1 second, if gameNotOn(if playerList>1, start game, otherwise only wait for other players), else do nothing.
+  socket.broadcast.emit('playerSeated', onePlayer);
+  socket.emit('updateMainPlayer', onePlayer);
+  socket.broadcast.emit('updateOtherPlayers', onePlayer);
+  //io.emit('updatePlayerInfo', onePlayer);
+}
+async function handleJoinGame(data, socket) {
+
+  await fetchPlayerInfo(data, socket);
+
+  if (!isGameOn) {
+    startGame();
+  } else {
+    console.log('waiting for this round finish.');
+  }
+}
+async function initPlayer(pData) {
+  const client = await pool.connect();
+  try {
+    const queryText =
+      'SELECT * FROM players WHERE id=' + parseInt(pData.player_id);
+    const { rows } = await client.query(queryText);
+    console.log('db outputs:' + JSON.stringify(rows[0]));
+    if (rows.length == 0) {
+      //insert
+      await client.query(
+        'INSERT INTO players(id, name, bankroll) VALUES(' +
+          parseInt(pData.player_id) +
+          ",'" +
+          pData.player_name +
+          "'," +
+          5000 +
+          ')'
+      );
+      await client.query('COMMIT');
+      return new Player(
+        parseInt(pData.player_id),
+        pData.pos_id,
+        pData.player_name,
+        pData.player_icon,
+        '',
+        5000,
+        '',
+        '',
+        'inactive',
+        0,
+        0,
+        0
+      );
+    } else {
+      console.log(rows[0].bankroll + ' ' + rows[0].name + ' ' + rows[0].id);
+      return new Player(
+        rows[0].id,
+        pData.pos_id,
+        rows[0].name,
+        pData.player_icon,
+        '',
+        rows[0].bankroll,
+        '',
+        '',
+        'inactive',
+        0,
+        0,
+        0
+      );
+    }
+    //await client.query(insertPhotoText, insertPhotoValues)
+    //await client.query('COMMIT')
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
 async function handleLeftPlayer(player, socket) {
   winner = getNextPlayer(player);
   winner.bankroll += pot;
-  console.log("deadBet is " + deadBet+ ",winner bankroll is "+winner.bankroll);
+  console.log(
+    'deadBet is ' + deadBet + ',winner bankroll is ' + winner.bankroll
+  );
   io.emit('updatePlayerInfo', winner);
   io.emit('updatePot', 0);
   // io.emit('removePlayerHighlight', playerList);
@@ -394,7 +481,7 @@ async function handleLeftPlayer(player, socket) {
   river = '';
   communityCards = [];
   deadBet = 0;
-  pot = 0
+  pot = 0;
 }
 
 function deRegisterPlayer(player, socket) {
@@ -722,10 +809,10 @@ async function startGame() {
     await sleep(1000);
     for (var i = 0; i < 2; i++) {
       var p = button;
-      while (getNextPlayer(p).player_id != button.player_id) {
+      while (getNextPlayer(p).pos_id != button.pos_id) {
         p = getNextPlayer(p);
         socketToPlayerMap.forEach((value, key, map) => {
-          if (value.player_id == p.player_id) {
+          if (value.pos_id == p.pos_id) {
             io.to(key).emit('faceUpCard' + i, {
               player: p,
             });
@@ -739,7 +826,7 @@ async function startGame() {
       }
 
       socketToPlayerMap.forEach((value, key, map) => {
-        if (value.player_id == button.player_id) {
+        if (value.pos_id == button.pos_id) {
           io.to(key).emit('faceUpCard' + i, {
             player: button,
           });
@@ -834,13 +921,13 @@ function getButtonPlayer() {
 }
 
 function getNextPlayer(player) {
-  for (var i = player.player_id; i < playerList.length; i++) {
+  for (var i = parseInt(player.pos_id); i < playerList.length; i++) {
     //console.log('player id: '  +playerList[i].player_id);
     if (playerList[i].status == 'active') {
       return playerList[i];
     }
   }
-  for (var i = 0; i < player.player_id; i++) {
+  for (var i = 0; i < parseInt(player.pos_id); i++) {
     //console.log('player id: '  +playerList[i].player_id);
     if (playerList[i].status == 'active') {
       return playerList[i];
@@ -880,6 +967,7 @@ function randomIntFromInterval(min, max) {
 
 function Player(
   playerId,
+  pos_id,
   name,
   avatar,
   role,
@@ -892,6 +980,7 @@ function Player(
   chips
 ) {
   this.player_id = playerId; //seating position
+  this.pos_id = pos_id;
   this.name = name;
   this.avatar = avatar;
   this.role = role; // small, big, button
