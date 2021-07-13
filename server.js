@@ -161,6 +161,7 @@ io.on('connection', function (socket) {
 
     if (highestBet > player.subtotal_bet) {
       updatePlayerBet(player.player_id, highestBet - player.subtotal_bet);
+      updatePlayerInfoDB(player).catch((e) => console.error(e.stack));
       io.emit('updatePlayerInfo', player);
       io.emit('updatePot', pot);
       next = getNextPlayer(player);
@@ -284,6 +285,7 @@ io.on('connection', function (socket) {
 
     player = getIdPlayer(parseInt(data.player_id));
     updatePlayerBet(player.player_id, parseInt(data.bet));
+    updatePlayerInfoDB(player).catch((e) => console.error(e.stack));
     io.emit('updatePlayerInfo', player);
     io.emit('updatePot', pot);
     //player.subtotal_bet = data.bet;
@@ -315,6 +317,7 @@ io.on('connection', function (socket) {
 
     player = getIdPlayer(parseInt(data.player_id));
     updatePlayerBet(player.player_id, parseInt(data.bet));
+    updatePlayerInfoDB(player).catch((e) => console.error(e.stack));
     io.emit('updatePlayerInfo', player);
     io.emit('updatePot', pot);
     socket.broadcast.emit('showFaceDownCards', player);
@@ -334,9 +337,26 @@ io.on('connection', function (socket) {
 });
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
-
-async function fetchPlayerInfo(data, socket){
-  console.log('input data:'+JSON.stringify(data))
+async function updatePlayerInfoDB(player) {
+  const client = await pool.connect();
+  try {
+    const queryText =
+      'UPDATE players SET bankroll=' +
+      player.bankroll +
+      ' WHERE id=' +
+      player.player_id;
+    const { rows } = await client.query(queryText);
+    console.log('db outputs:' + JSON.stringify(rows[0]));
+    await client.query('COMMIT');
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+async function fetchPlayerInfo(data, socket) {
+  console.log('input data:' + JSON.stringify(data));
   //FIX:
   // fetch data from DB, and compare.
   //if first time user, insert
@@ -358,9 +378,10 @@ async function fetchPlayerInfo(data, socket){
     0
   );
 
-  if (data.player_id !== '') { // if not quick start player
+  if (data.player_id !== '') {
+    // if not quick start player
     onePlayer = await initPlayer(data).catch((e) => console.error(e.stack));
-  } 
+  }
 
   playerList.push(onePlayer);
   socketToPlayerMap.set(socket.id, onePlayer);
@@ -382,7 +403,6 @@ async function fetchPlayerInfo(data, socket){
   //io.emit('updatePlayerInfo', onePlayer);
 }
 async function handleJoinGame(data, socket) {
-
   await fetchPlayerInfo(data, socket);
 
   if (!isGameOn) {
@@ -457,6 +477,7 @@ async function handleLeftPlayer(player, socket) {
   console.log(
     'deadBet is ' + deadBet + ',winner bankroll is ' + winner.bankroll
   );
+  updatePlayerInfoDB(winner).catch((e) => console.error(e.stack));
   io.emit('updatePlayerInfo', winner);
   io.emit('updatePot', 0);
   // io.emit('removePlayerHighlight', playerList);
@@ -538,6 +559,7 @@ function dealCommunityCards() {
 async function handleNoShowDown(player) {
   player.bankroll += player.total_bet;
   collectChips(player, getStatusPlayers('folded'));
+  updatePlayerInfoDB(player).catch((e) => console.error(e.stack));
   io.emit('updatePlayerInfo', player);
   io.emit('updatePot', pot);
   // io.emit('removePlayerHighlight', playerList);
@@ -611,6 +633,7 @@ async function showDownAndRestart(activePlayers) {
       activePlayers[i].bankroll += activePlayers[i].chips;
       pot -= activePlayers[i].chips;
       activePlayers[i].chips = 0;
+      updatePlayerInfoDB(activePlayers[i]).catch((e) => console.error(e.stack));
       io.emit('updatePlayerInfo', activePlayers[i]);
       io.emit('updatePot', pot);
       await sleep(3000);
@@ -873,6 +896,7 @@ function updatePlayerHandCards() {
   small = getNextPlayer(button);
   updatePlayerRole(small.player_id, 'small');
   updatePlayerBet(small.player_id, 10); //hardcoded small blind 10
+  updatePlayerInfoDB(small).catch((e) => console.error(e.stack));
   io.emit('updatePlayerInfo', small);
   io.emit('updatePot', pot);
   io.emit('updateSmallBlind', small);
@@ -885,6 +909,7 @@ function updatePlayerHandCards() {
   big = getNextPlayer(small);
   //updatePlayer(next.player_id, '', '');
   updatePlayerBet(big.player_id, 20); //hardcoded big blind 20
+  updatePlayerInfoDB(big).catch((e) => console.error(e.stack));
   io.emit('updatePlayerInfo', big);
   io.emit('updatePot', pot);
   io.emit('updateBigBlind', big);
