@@ -15,14 +15,31 @@ const index = require('./routes/index');
 const getAnalyzedHand = require('./js/hand').getAnalyzedHand;
 const getRankedPlayers = require('./js/hand').getRankedPlayers;
 const distributeChips = require('./js/hand').distributeChips;
+const sleep = require('./js/handler').sleep;
+const makeDeck = require('./js/handler').makeDeck;
+const drawCards = require('./js/handler').drawCards;
+const updatePlayerHoleCards = require('./js/handler').updatePlayerHoleCards;
+const getNextPlayer = require('./js/handler').getNextPlayer;
+//const getRandomCardIndex = require('./js/handler').getRandomCardIndex;
+const Player = require('./js/player').Player;
+//const getNextPlayer = require('./js/handler').getNextPlayer;
+
+
+const pool = new Pool({
+  user: 'postgres',
+  host: 'localhost',
+  database: 'test',
+  password: '123',
+  port: 5432,
+});
 
 app.use(cors());
-app.use(index);
+//app.use(index);
 
 //globals
-var playerList = [];
+global.playerList = [];
 var communityCards = [];
-var cards = new Array(52);
+global.cards = new Array(52);
 var socketToPlayerMap = new Map(); //(socket.id, Player)
 var isGameOn = false;
 var button;
@@ -36,13 +53,7 @@ var turn = '';
 var river = '';
 var gameStage; //enum: preFlop, flop, turn, river
 
-const pool = new Pool({
-  user: 'postgres',
-  host: 'localhost',
-  database: 'test',
-  password: '123',
-  port: 5432,
-});
+
 
 let interval;
 
@@ -619,10 +630,6 @@ function handleShowDown() {
   console.log('got run first?');
 }
 
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 async function showDownAndRestart(activePlayers) {
   each = deadBet / activePlayers.length; //split the dead chips
   for (let i = 0; i < activePlayers.length; i++) {
@@ -930,7 +937,7 @@ function updatePlayerHandCards() {
 
 function getButtonPlayer() {
   playerList.sort((a, b) => {
-    return a.player_id - b.player_id;
+    return a.pos_id - b.pos_id;
   });
   buttonPlayer = getRolePlayers('button');
   if (buttonPlayer.length == 0) {
@@ -945,86 +952,102 @@ function getButtonPlayer() {
   }
 }
 
-function getNextPlayer(player) {
-  for (var i = parseInt(player.pos_id); i < playerList.length; i++) {
-    //console.log('player id: '  +playerList[i].player_id);
-    if (playerList[i].status == 'active') {
-      return playerList[i];
-    }
-  }
-  for (var i = 0; i < parseInt(player.pos_id); i++) {
-    //console.log('player id: '  +playerList[i].player_id);
-    if (playerList[i].status == 'active') {
-      return playerList[i];
-    }
-  }
-}
+// function getNextPlayer(player) {
+//   for(let i=parseInt(player.pos_id)+1; i<8; i++){
+//     for(let j = 0; j<playerList.length; j++){
+//       if(parseInt(playerList[j].pos_id) === i && playerList[j].status == 'active'){
+//         return playerList[j];
+//       }
+//     }
+//   }
+//   for(let i=1; i<parseInt(player.pos_id); i++){
+//     for(let j = 0; j<playerList.length; j++){
+//       if(parseInt(playerList[j].pos_id) === i && playerList[j].status == 'active'){
+//         return playerList[j];
+//       }
+//     }
+//   }
 
-function drawCards(nrOfCards) {
-  outCards = [];
-  for (var i = 0; i < nrOfCards; i++) {
-    let index = getRandomCardIndex();
-    outCards.push(cards[index]);
-    cards.splice(index, 1);
-  }
-  return outCards;
-}
+  // for (var i = parseInt(player.pos_id); i < playerList.length; i++) {
+  //   //console.log('player id: '  +playerList[i].player_id);
+  //   if (playerList[i].status == 'active') {
+  //     return playerList[i];
+  //   }
+  // }
+  // for (var i = 0; i < parseInt(player.pos_id); i++) {
+  //   //console.log('player id: '  +playerList[i].player_id);
+  //   if (playerList[i].status == 'active') {
+  //     return playerList[i];
+  //   }
+  // }
+//}
 
-function updatePlayerHoleCards(player) {
-  let index = getRandomCardIndex();
-  player.carda = cards[index];
-  cards.splice(index, 1);
+// function drawCards(nrOfCards, cards) {
+//   outCards = [];
+//   for (var i = 0; i < nrOfCards; i++) {
+//     let index = getRandomCardIndex(cards);
+//     outCards.push(cards[index]);
+//     cards.splice(index, 1);
+//   }
+//   return outCards;
+// }
 
-  index = getRandomCardIndex();
-  player.cardb = cards[index];
-  cards.splice(index, 1);
-}
+// function updatePlayerHoleCards(player, cards) {
+//   let index = getRandomCardIndex(cards);
+//   player.carda = cards[index];
+//   cards.splice(index, 1);
 
-function getRandomCardIndex() {
-  random_ind = randomIntFromInterval(0, cards.length - 1);
-  return random_ind;
-}
+//   index = getRandomCardIndex(cards);
+//   player.cardb = cards[index];
+//   cards.splice(index, 1);
+// }
 
-function randomIntFromInterval(min, max) {
-  // min and max included
-  return Math.floor(Math.random() * (max - min + 1) + min);
-}
+// function getRandomCardIndex(cards) {
+//   random_ind = randomIntFromInterval(0, cards.length - 1);
+//   return random_ind;
+// }
 
-function Player(
-  playerId,
-  pos_id,
-  name,
-  avatar,
-  role,
-  bankroll,
-  carda,
-  cardb,
-  status,
-  total_bet,
-  subtotal_bet,
-  chips
-) {
-  this.player_id = playerId; //seating position
-  this.pos_id = pos_id;
-  this.name = name;
-  this.avatar = avatar;
-  this.role = role; // small, big, button
-  this.bankroll = bankroll;
-  this.carda = carda;
-  this.cardb = cardb;
-  this.status = status; //active: playing, inactive: seated but not playing(player who folded, new player joined in but game is already on)
-  this.total_bet = total_bet; //total bet each game
-  this.subtotal_bet = subtotal_bet; //bet each round
-  this.chips = chips; //winning chips to collect
-}
+// function randomIntFromInterval(min, max) {
+//   // min and max included
+//   return Math.floor(Math.random() * (max - min + 1) + min);
+// }
 
-function makeDeck() {
-  var i;
-  var j = 0;
-  for (i = 2; i < 15; i++) {
-    cards[j++] = 'h' + i;
-    cards[j++] = 'd' + i;
-    cards[j++] = 'c' + i;
-    cards[j++] = 's' + i;
-  }
-}
+// function Player(
+//   playerId,
+//   pos_id,
+//   name,
+//   avatar,
+//   role,
+//   bankroll,
+//   carda,
+//   cardb,
+//   status,
+//   total_bet,
+//   subtotal_bet,
+//   chips
+// ) {
+//   this.player_id = playerId; //seating position
+//   this.pos_id = pos_id;
+//   this.name = name;
+//   this.avatar = avatar;
+//   this.role = role; // small, big, button
+//   this.bankroll = bankroll;
+//   this.carda = carda;
+//   this.cardb = cardb;
+//   this.status = status; //active: playing, inactive: seated but not playing(player who folded, new player joined in but game is already on)
+//   this.total_bet = total_bet; //total bet each game
+//   this.subtotal_bet = subtotal_bet; //bet each round
+//   this.chips = chips; //winning chips to collect
+// }
+
+// function makeDeck() {
+//   var i;
+//   var j = 0;
+//   for (i = 2; i < 15; i++) {
+//     cards[j++] = 'h' + i;
+//     cards[j++] = 'd' + i;
+//     cards[j++] = 'c' + i;
+//     cards[j++] = 's' + i;
+//   }
+// }
+
