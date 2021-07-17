@@ -52,7 +52,7 @@ function getNextPlayer(player) {
         }
       }
     }
-    for(let i=1; i<parseInt(player.pos_id); i++){
+    for(let i=1; i<parseInt(player.pos_id)+1; i++){
       for(let j = 0; j<playerList.length; j++){
         if(parseInt(playerList[j].pos_id) === i && playerList[j].status == 'active'){
           return playerList[j];

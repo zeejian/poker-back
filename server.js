@@ -3,6 +3,12 @@ const app = express();
 const server = require('http').Server(app);
 const { Pool } = require('pg');
 //const io = require('socket.io')(server);
+session = require('express-session')({
+  secret: 'my-secret',
+  resave: true,
+  saveUninitialized: true,
+});
+sharedsession = require('express-socket.io-session');
 const io = require('socket.io')(server, {
   cors: {
     origin: '*',
@@ -22,8 +28,8 @@ const updatePlayerHoleCards = require('./js/handler').updatePlayerHoleCards;
 const getNextPlayer = require('./js/handler').getNextPlayer;
 //const getRandomCardIndex = require('./js/handler').getRandomCardIndex;
 const Player = require('./js/player').Player;
+const { json } = require('body-parser');
 //const getNextPlayer = require('./js/handler').getNextPlayer;
-
 
 const pool = new Pool({
   user: 'postgres',
@@ -34,13 +40,36 @@ const pool = new Pool({
 });
 
 app.use(cors());
-//app.use(index);
+app.use(index);
+// const sessionMiddleware = session({
+
+//   secret: 'some secret',
+//   resave: false,
+//   saveUninitialized: true,
+//   cookie: { maxAge: 60000 },
+// });
+// register middleware in Express
+app.use(session);
+// register middleware in Socket.IO
+// io.use((socket, next) => {
+//   sessionMiddleware(socket.request, {}, next);
+//   // sessionMiddleware(socket.request, socket.request.res, next); will not work with websocket-only
+//   // connections, as 'socket.request.res' will be undefined in that case
+// });
+
+io.use(
+  sharedsession(session, {
+    autoSave: true,
+  })
+);
 
 //globals
+var loggedInUsers = [];
 global.playerList = [];
 var communityCards = [];
 global.cards = new Array(52);
 var socketToPlayerMap = new Map(); //(socket.id, Player)
+var socketToPlayerIdMap = new Map(); 
 var isGameOn = false;
 var button;
 var small;
@@ -52,11 +81,6 @@ var flop = [];
 var turn = '';
 var river = '';
 var gameStage; //enum: preFlop, flop, turn, river
-
-
-
-let interval;
-
 // io.on("connection", (socket) => {
 //   console.log("New client connected");
 //   if (interval) {
@@ -82,7 +106,19 @@ server.listen(port, () => console.log(`Listening on port ${port}`));
 // })
 
 io.on('connection', function (socket) {
-  console.log('A client open the window:', socket.id);
+  // const session = socket.request.session;
+  // session.connections++;
+  // session.save();
+  console.log('session data', socket.handshake.session.id);
+  console.log('session data', JSON.stringify(socket.handshake.session));
+  console.log(
+    'A client open the window:',
+    socket.id,
+    ', session is: ' +
+      JSON.stringify(socket.request.session) +
+      ', id: ' +
+      session.id
+  );
   if (flop.length == 3) {
     io.to(socket.id).emit('layFlopCards', flop);
   }
@@ -101,8 +137,44 @@ io.on('connection', function (socket) {
       io.to(socket.id).emit('updatePot', pot);
     });
   }
+  socket.on('login', function (player_id) {
+    console.log('SERVER log in')
+    if (loggedInUsers.includes(player_id)) {
+      console.log('SERVER log in, already have user')
+      socket.emit('updateUserStatus', "registered");
+    } else {
+      console.log('SERVER log in, add user')
+      loggedInUsers.push(player_id);
+      socketToPlayerIdMap.set(socket.id, player_id);
+      socket.emit('updateUserStatus', "new");
+    }
+  });
 
-  socket.on('disconnect', function (player) {
+  socket.on('logout', function (playerData) {
+    if (socketToPlayerMap.has(socket.id)) {
+      player = socketToPlayerMap.get(socket.id);
+      //if playerList length is 2, deregister the player, restart the game
+      deadBet += player.total_bet;
+      if (playerList.length <= 2) {
+        handleLeftPlayer(player, socket);
+
+        // deRegisterPlayer(player, socket);
+
+        //clearBoard()
+      } else {
+        if (player.hasToken) {
+          next = getNextPlayer(player);
+          sendToPlayer(socketToPlayerMap, next);
+        }
+        deRegisterPlayer(player, socket);
+      }
+      socket.emit('resetSeat', playerData);
+    }
+    console.log(playerList);
+    console.log(socketToPlayerMap);
+  });
+
+  socket.on('disconnect', function () {
     console.log('A client close the window:', socket.id);
 
     if (socketToPlayerMap.has(socket.id)) {
@@ -123,8 +195,9 @@ io.on('connection', function (socket) {
         deRegisterPlayer(player, socket);
       }
     }
-    console.log(playerList);
-    console.log(socketToPlayerMap);
+    removeFromArray(loggedInUsers, socketToPlayerIdMap.get(socket.id));
+    socketToPlayerIdMap.delete(socket.id)
+    console.log('There are '+loggedInUsers.length+' logged user.')
   });
 
   //console.log('new player opens a browser window');
@@ -393,7 +466,19 @@ async function fetchPlayerInfo(data, socket) {
     // if not quick start player
     onePlayer = await initPlayer(data).catch((e) => console.error(e.stack));
   }
-
+  //FIX: check duplicates!
+  playerList.forEach((p) => {
+    console.log(
+      'PLAYER LIST element player_id: ' +
+        p.player_id +
+        ' , new player_id' +
+        onePlayer.player_id
+    );
+    if (p.player_id === onePlayer.player_id) {
+      //FIX:set everything unclickable
+      throw 'This user is already logged in! Check again!';
+    }
+  });
   playerList.push(onePlayer);
   socketToPlayerMap.set(socket.id, onePlayer);
 
@@ -407,6 +492,7 @@ async function fetchPlayerInfo(data, socket) {
   //   io.to(socket.id).emit('layRiverCard', river);
   // }
 
+  //FIX: check Map for the same player
   //wait for 1 second, if gameNotOn(if playerList>1, start game, otherwise only wait for other players), else do nothing.
   socket.broadcast.emit('playerSeated', onePlayer);
   socket.emit('updateMainPlayer', onePlayer);
@@ -414,7 +500,12 @@ async function fetchPlayerInfo(data, socket) {
   //io.emit('updatePlayerInfo', onePlayer);
 }
 async function handleJoinGame(data, socket) {
-  await fetchPlayerInfo(data, socket);
+  try {
+    await fetchPlayerInfo(data, socket);
+  } catch (error) {
+    console.warn(error);
+    socket.emit('resetSeat', { pId: data.pos_id, pos: 1 });
+  }
 
   if (!isGameOn) {
     startGame();
@@ -484,26 +575,33 @@ async function initPlayer(pData) {
 
 async function handleLeftPlayer(player, socket) {
   winner = getNextPlayer(player);
-  winner.bankroll += pot;
-  console.log(
-    'deadBet is ' + deadBet + ',winner bankroll is ' + winner.bankroll
-  );
-  updatePlayerInfoDB(winner).catch((e) => console.error(e.stack));
-  io.emit('updatePlayerInfo', winner);
-  io.emit('updatePot', 0);
-  // io.emit('removePlayerHighlight', playerList);
+  if(!winner){
+    console.log("here?");
+    io.emit('hideAccountInfo', player);
+    deRegisterPlayer(player, socket);
+  } else {
+    winner.bankroll += pot;
+    console.log(
+      'deadBet is ' + deadBet + ',winner bankroll is ' + winner.bankroll
+    );
+    updatePlayerInfoDB(winner).catch((e) => console.error(e.stack));
+    io.emit('updatePlayerInfo', winner);
+    io.emit('updatePot', 0);
+    // io.emit('removePlayerHighlight', playerList);
+  
+    //await sleep(10000);
+    io.emit('removePlayerHighlight', playerList);
+    io.emit('showNoShowDownWinner', winner);
+    await sleep(5000);
+    io.emit('updateDefault', playerList);
+    io.emit('hidePlayerOption');
+    io.emit('hideAccountInfo', player);
+    io.emit('removePlayerHighlight', winner);
+    await sleep(5000);
+    //wait for seconds to start new round
+    deRegisterPlayer(player, socket);
+  }
 
-  //await sleep(10000);
-  io.emit('removePlayerHighlight', playerList);
-  io.emit('showNoShowDownWinner', winner);
-  await sleep(5000);
-  io.emit('updateDefault', playerList);
-  io.emit('hidePlayerOption');
-  io.emit('hideAccountInfo', player);
-  io.emit('removePlayerHighlight', winner);
-  await sleep(5000);
-  //wait for seconds to start new round
-  deRegisterPlayer(player, socket);
   console.log('this round ended.');
 
   isGameOn = false;
@@ -523,6 +621,18 @@ function deRegisterPlayer(player, socket) {
   }
   socketToPlayerMap.delete(socket.id);
   socket.broadcast.emit('playerLeftGame', player);
+  socket.emit('playerLeftGame', player);
+  socket.emit('hideMainPlayerAccount', player);
+  console.log(playerList);
+  console.log(socketToPlayerMap);
+}
+
+function removeFromArray(arr, e){
+  const index = arr.indexOf(e)
+  console.log('index is :'+index)
+  if(index > -1){
+    arr.splice(index, 1);
+  }
 }
 
 function collectChips(winner, fPlayers) {
@@ -968,18 +1078,18 @@ function getButtonPlayer() {
 //     }
 //   }
 
-  // for (var i = parseInt(player.pos_id); i < playerList.length; i++) {
-  //   //console.log('player id: '  +playerList[i].player_id);
-  //   if (playerList[i].status == 'active') {
-  //     return playerList[i];
-  //   }
-  // }
-  // for (var i = 0; i < parseInt(player.pos_id); i++) {
-  //   //console.log('player id: '  +playerList[i].player_id);
-  //   if (playerList[i].status == 'active') {
-  //     return playerList[i];
-  //   }
-  // }
+// for (var i = parseInt(player.pos_id); i < playerList.length; i++) {
+//   //console.log('player id: '  +playerList[i].player_id);
+//   if (playerList[i].status == 'active') {
+//     return playerList[i];
+//   }
+// }
+// for (var i = 0; i < parseInt(player.pos_id); i++) {
+//   //console.log('player id: '  +playerList[i].player_id);
+//   if (playerList[i].status == 'active') {
+//     return playerList[i];
+//   }
+// }
 //}
 
 // function drawCards(nrOfCards, cards) {
@@ -1050,4 +1160,3 @@ function getButtonPlayer() {
 //     cards[j++] = 's' + i;
 //   }
 // }
-
