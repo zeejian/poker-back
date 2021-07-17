@@ -105,6 +105,7 @@ server.listen(port, () => console.log(`Listening on port ${port}`));
 //   console.log('A client open the window:', socket.id);
 // })
 
+
 io.on('connection', function (socket) {
   // const session = socket.request.session;
   // session.connections++;
