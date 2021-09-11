@@ -1,0 +1,21 @@
+runtime: nodejs
+env: flex
+
+# cloud db setup
+env_variables:
+  SQL_USER: postgres
+  SQL_PASSWORD: 12345
+  SQL_DATABASE: test
+  INSTANCE_CONNECTION_NAME: poker-back-325419:europe-west1:pokerdb
+
+# this is needed for flex env db connection 
+beta_settings:
+  cloud_sql_instances: poker-back-325419:europe-west1:pokerdb
+
+# no auto scaling of instance for the table player consistency
+manual_scaling:
+  instances: 1
+
+# for persistent websocket connection
+network:
+  session_affinity: true

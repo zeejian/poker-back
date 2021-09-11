@@ -4,13 +4,24 @@ const getAnalyzedHand = require('./hand').getAnalyzedHand;
 const distributeChips = require('./hand').distributeChips;
 const Player = require('./player').Player;
 
+//production:
 const pool = new Pool({
   user: 'postgres',
-  host: 'localhost',
+  //host: '34.78.131.64',
+  host: '/cloudsql/poker-back-325419:europe-west1:pokerdb',
   database: 'test',
-  password: '123',
+  password: '12345',
   port: 5432,
 });
+
+//dev env
+// const pool = new Pool({
+//   user: 'postgres',
+//   host: 'localhost',
+//   database: 'test',
+//   password: '123',
+//   port: 5432,
+// });
 
 
 function sleep(ms) {
@@ -553,7 +564,13 @@ async function handleJoinGame(data, socket) {
   }
 }
 async function initPlayer(pData) {
+  console.log('Before DB connection')
   const client = await pool.connect();
+  if(client === undefined){
+    console.log('DB is NOT connected!')
+  }else{
+    console.log('DB is connected!')
+  }
   try {
     const queryText =
       'SELECT * FROM players WHERE id=' + parseInt(pData.player_id);

@@ -16,7 +16,11 @@ global.io = require('socket.io')(server, {
 });
 
 const cors = require('cors');
-const port = process.env.PORT || 9000;
+//dev env port
+//const port = process.env.PORT || 9000;
+//production:
+const port = process.env.PORT || 8080;
+
 const index = require('./routes/index');
 const getAnalyzedHand = require('./js/hand').getAnalyzedHand;
 const getRankedPlayers = require('./js/hand').getRankedPlayers;
@@ -126,6 +130,7 @@ global.tokenPlayer;
 // };
 
 server.listen(port, () => console.log(`Listening on port ${port}`));
+//server.listen(65080);
 
 io.on('connection', function (socket) {
   // const session = socket.request.session;
