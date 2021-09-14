@@ -1,7 +1,9 @@
+require('dotenv').config();
 const express = require('express');
 const app = express();
 const server = require('http').Server(app);
 const { Pool } = require('pg');
+
 //const io = require('socket.io')(server);
 session = require('express-session')({
   secret: 'my-secret',
@@ -16,10 +18,16 @@ global.io = require('socket.io')(server, {
 });
 
 const cors = require('cors');
+
+let port = process.env.PORT || 8080
+if(process.env.NODE_ENV==='dev'){
+  console.log('This is a dev environment')
+  port = process.env.PORT || 9000
+} 
 //dev env port
 //const port = process.env.PORT || 9000;
 //production:
-const port = process.env.PORT || 8080;
+//const port = process.env.PORT || 8080;
 
 const index = require('./routes/index');
 const getAnalyzedHand = require('./js/hand').getAnalyzedHand;
@@ -228,6 +236,7 @@ io.on('connection', function (socket) {
     }
     removeFromArray(loggedInUsers, socketToPlayerIdMap.get(socket.id));
     socketToPlayerIdMap.delete(socket.id);
+    socket.emit('updateUserStatus', 'none')
     console.log('There are ' + loggedInUsers.length + ' logged user.');
   });
 

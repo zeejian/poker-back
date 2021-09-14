@@ -16,6 +16,6 @@ beta_settings:
 manual_scaling:
   instances: 1
 
-# for persistent websocket connection
+# for persistent websocket connection(e.g websocket other than http )
 network:
   session_affinity: true

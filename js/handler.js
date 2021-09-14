@@ -1,11 +1,11 @@
+require('dotenv').config();
 const { Pool } = require('pg');
 const getRankedPlayers = require('./hand').getRankedPlayers;
 const getAnalyzedHand = require('./hand').getAnalyzedHand;
 const distributeChips = require('./hand').distributeChips;
 const Player = require('./player').Player;
 
-//production:
-const pool = new Pool({
+let pool = new Pool({
   user: 'postgres',
   //host: '34.78.131.64',
   host: '/cloudsql/poker-back-325419:europe-west1:pokerdb',
@@ -13,6 +13,25 @@ const pool = new Pool({
   password: '12345',
   port: 5432,
 });
+if (process.env.NODE_ENV === 'dev') {
+  pool = new Pool({
+    user: 'postgres',
+    host: 'localhost',
+    database: 'test',
+    password: '123',
+    port: 5432,
+  });
+} 
+
+//production:
+// const pool = new Pool({
+//   user: 'postgres',
+//   //host: '34.78.131.64',
+//   host: '/cloudsql/poker-back-325419:europe-west1:pokerdb',
+//   database: 'test',
+//   password: '12345',
+//   port: 5432,
+// });
 
 //dev env
 // const pool = new Pool({
@@ -22,7 +41,6 @@ const pool = new Pool({
 //   password: '123',
 //   port: 5432,
 // });
-
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -187,7 +205,7 @@ function getIdPlayer(jVal) {
 }
 
 function sendToPlayer(socket_player, aPlayer) {
-  tokenPlayer = aPlayer
+  tokenPlayer = aPlayer;
   socket_player.forEach((value, key, map) => {
     if (value.player_id == aPlayer.player_id) {
       if (highestBet - aPlayer.subtotal_bet <= aPlayer.bankroll) {
@@ -564,12 +582,12 @@ async function handleJoinGame(data, socket) {
   }
 }
 async function initPlayer(pData) {
-  console.log('Before DB connection')
+  console.log('Before DB connection');
   const client = await pool.connect();
-  if(client === undefined){
-    console.log('DB is NOT connected!')
-  }else{
-    console.log('DB is connected!')
+  if (client === undefined) {
+    console.log('DB is NOT connected!');
+  } else {
+    console.log('DB is connected!');
   }
   try {
     const queryText =
@@ -692,8 +710,6 @@ async function handleNoShowDown(player) {
     console.log('new players are in.');
   }
 }
-
-
 
 module.exports = {
   sleep,
