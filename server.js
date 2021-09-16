@@ -442,7 +442,7 @@ io.on('connection', function (socket) {
     );
 
     player = getIdPlayer(parseInt(data.player_id));
-    updatePlayerBet(player.player_id, parseInt(data.bet));
+    updatePlayerBet(player.player_id, player.bankroll);
     updatePlayerInfoDB(player).catch((e) => console.error(e.stack));
     io.emit('updatePlayerInfo', player);
     io.emit('updatePot', pot);
